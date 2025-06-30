@@ -6,6 +6,7 @@ import * as z from "zod";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +27,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -35,14 +44,23 @@ const formSchema = z.object({
   sku: z.string().min(1, {
     message: "SKU is required.",
   }),
-  category: z.string().min(2, {
-    message: "Category must be at least 2 characters.",
+  category: z.string({
+    required_error: "Please select a category.",
   }),
   unit: z.string().min(1, {
     message: "Unit is required.",
   }),
   description: z.string().optional(),
 });
+
+const categories = [
+  "Network Devices",
+  "Cabling & Connectors",
+  "Customer Premise Equipment (CPE)",
+  "Tools & Equipment",
+  "Accessories",
+  "Other",
+];
 
 interface AddItemFormProps {
   isOpen: boolean;
@@ -51,17 +69,27 @@ interface AddItemFormProps {
 
 const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [autoGenerateSku, setAutoGenerateSku] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       sku: "",
-      category: "",
       unit: "",
       description: "",
     },
   });
+
+  const itemName = form.watch("name");
+
+  useEffect(() => {
+    if (autoGenerateSku && itemName) {
+      const skuPrefix = itemName.slice(0, 3).toUpperCase();
+      const skuSuffix = Math.floor(100 + Math.random() * 900);
+      form.setValue("sku", `${skuPrefix}-${skuSuffix}`, { shouldValidate: true });
+    }
+  }, [itemName, autoGenerateSku, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -103,38 +131,64 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
                 <FormItem>
                   <FormLabel>Item Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Laptop" {...field} />
+                    <Input placeholder="e.g., Fiber Optic Router" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="sku"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SKU</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., LAP-001" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <FormLabel>SKU</FormLabel>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="auto-sku-switch"
+                    checked={autoGenerateSku}
+                    onCheckedChange={setAutoGenerateSku}
+                  />
+                  <Label htmlFor="auto-sku-switch">Auto-generate</Label>
+                </div>
+              </div>
+              <FormField
+                control={form.control}
+                name="sku"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="e.g., FIB-123" {...field} disabled={autoGenerateSku} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="category"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Electronics" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="unit"
@@ -155,7 +209,7 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
                 <FormItem>
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="e.g., High-performance laptop" {...field} />
+                    <Textarea placeholder="e.g., High-performance router for fiber optic connections" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
