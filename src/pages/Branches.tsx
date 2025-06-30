@@ -22,6 +22,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"; // Import AlertDialog components
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
@@ -43,6 +54,7 @@ const Branches = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [branchToDelete, setBranchToDelete] = useState<string | null>(null); // State untuk menyimpan ID cabang yang akan dihapus
   const { role } = useAuth();
   const isAdmin = role === 'admin';
 
@@ -58,30 +70,29 @@ const Branches = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!isAdmin) {
+  const handleDeleteConfirm = async () => {
+    if (!isAdmin || !branchToDelete) {
       toast({
         title: "Akses Ditolak",
-        description: "Anda tidak memiliki izin untuk menghapus cabang.",
+        description: "Anda tidak memiliki izin atau cabang tidak valid untuk dihapus.",
         variant: "destructive",
       });
       return;
     }
-    if (window.confirm("Are you sure you want to delete this branch?")) {
-      try {
-        await deleteDoc(doc(db, "branches", id));
-        toast({
-          title: "Success",
-          description: "Branch deleted successfully.",
-        });
-      } catch (error) {
-        console.error("Error deleting branch: ", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete branch.",
-          variant: "destructive",
-        });
-      }
+    try {
+      await deleteDoc(doc(db, "branches", branchToDelete));
+      toast({
+        title: "Success",
+        description: "Branch deleted successfully.",
+      });
+      setBranchToDelete(null); // Reset state setelah penghapusan
+    } catch (error) {
+      console.error("Error deleting branch: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete branch.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -144,13 +155,30 @@ const Branches = () => {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(branch.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setBranchToDelete(branch.id)} // Set ID cabang yang akan dihapus
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the branch
+                                and remove its data from our servers.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setBranchToDelete(null)}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteConfirm}>Continue</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     )}
                   </TableCell>
@@ -173,9 +201,9 @@ const Branches = () => {
             <DialogHeader>
               <DialogTitle>Edit Branch</DialogTitle>
             </DialogHeader>
-            <EditBranchForm 
-              setDialogOpen={setIsEditDialogOpen} 
-              branch={editingBranch} 
+            <EditBranchForm
+              setDialogOpen={setIsEditDialogOpen}
+              branch={editingBranch}
             />
           </DialogContent>
         </Dialog>
