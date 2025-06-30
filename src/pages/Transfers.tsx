@@ -32,6 +32,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger, // Ini yang ditambahkan
 } from "@/components/ui/alert-dialog";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc } from "firebase/firestore";
