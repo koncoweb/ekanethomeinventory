@@ -1,194 +1,189 @@
-import { useState, useEffect } from "react";
-import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2 } from "lucide-react";
-import { AddUserForm } from "@/components/AddUserForm";
-import { EditUserForm } from "@/components/EditUserForm";
-import { ResponsiveDialog } from "@/components/ResponsiveDialog";
+import { useState, useEffect, useMemo } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
   TableHeader,
   TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
-import { deleteDoc } from "firebase/firestore";
+import { Pencil } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EditUserForm } from "@/components/EditUserForm";
+import { AddUserForm } from "@/components/AddUserForm";
 import { Branch } from "./Branches";
+import { Badge } from "@/components/ui/badge";
 
-export interface User {
+export interface UserData {
   id: string;
   email: string;
   role: "admin" | "manager";
   branchId?: string;
-  branchName?: string;
 }
 
 const Users = () => {
-  const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!currentUser || currentUser.role !== "admin") {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
+    const fetchBranches = async () => {
       try {
-        // Fetch branches
-        const branchSnapshot = await getDocs(collection(db, "branches"));
-        const branchesData = branchSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Branch));
-        setBranches(branchesData);
-        const branchMap = new Map(branchesData.map(b => [b.id, b.name]));
-
-        // Fetch users
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const usersData = usersSnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                branchName: data.branchId ? branchMap.get(data.branchId) : 'N/A',
-            } as User;
-        });
-        setUsers(usersData);
+        const branchesSnapshot = await getDocs(collection(db, "branches"));
+        setBranches(branchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Branch[]);
       } catch (error) {
-        console.error("Error fetching data: ", error);
-        toast.error("Failed to fetch data.");
-      } finally {
-        setLoading(false);
+        console.error("Error fetching branches:", error);
+        toast.error("Failed to load branch data.");
       }
     };
 
-    fetchData();
-  }, [currentUser, addDialogOpen, editDialogOpen]);
+    fetchBranches();
 
-  const handleEditClick = (user: User) => {
-    setSelectedUser(user);
-    setEditDialogOpen(true);
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      const usersData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as UserData[];
+      setUsers(usersData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching users: ", error);
+      toast.error("Failed to fetch users data.");
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const processedUsers = useMemo(() => {
+    const branchesMap = new Map(branches.map(branch => [branch.id, branch.name]));
+    return users.map(user => ({
+      ...user,
+      branchName: user.branchId ? branchesMap.get(user.branchId) || "Invalid Branch" : "N/A",
+    }));
+  }, [users, branches]);
+
+  const handleEditClick = (user: UserData) => {
+    setEditingUser(user);
+    setIsEditDialogOpen(true);
   };
-  
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      await deleteDoc(doc(db, "users", userId));
-      setUsers(users.filter(user => user.id !== userId));
-      toast.success("User deleted successfully.");
-    } catch (error) {
-      console.error("Error deleting user: ", error);
-      toast.error("Failed to delete user. Note: You may need to delete the user from Firebase Authentication manually.");
-    }
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (currentUser?.role !== "admin") {
-    return <div>You do not have permission to view this page.</div>;
-  }
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Manage Users</h1>
-        <ResponsiveDialog
-          open={addDialogOpen}
-          onOpenChange={setAddDialogOpen}
-          trigger={
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add User
-            </Button>
-          }
-          title="Add New User"
-          description="Fill in the details to create a new user."
-        >
-          <AddUserForm setDialogOpen={setAddDialogOpen} branches={branches} />
-        </ResponsiveDialog>
-      </div>
-
-      {editDialogOpen && selectedUser && (
-        <ResponsiveDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          trigger={<></>}
-          title="Edit User"
-          description="Update the user's details."
-        >
-          <EditUserForm
-            setDialogOpen={setEditDialogOpen}
-            user={selectedUser}
-            branches={branches}
-          />
-        </ResponsiveDialog>
-      )}
-
-      <div className="rounded-md border">
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>User Management</CardTitle>
+            <CardDescription>Manage user accounts and permissions.</CardDescription>
+          </div>
+          {isAdmin && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>Add User</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                </DialogHeader>
+                <AddUserForm setDialogOpen={setIsAddDialogOpen} branches={branches} />
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Branch</TableHead>
+              <TableHead>Assigned Branch</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>{user.branchName || 'N/A'}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
+            {loading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : processedUsers.length > 0 ? (
+              processedUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{user.branchName}</TableCell>
+                  <TableCell className="text-right">
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(user)}
+                      >
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the user account.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>Delete</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center">
+                  No users found.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
-      </div>
-    </div>
+      </CardContent>
+
+      {editingUser && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            <EditUserForm
+              setDialogOpen={setIsEditDialogOpen}
+              user={editingUser}
+              branches={branches}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </Card>
   );
 };
 
