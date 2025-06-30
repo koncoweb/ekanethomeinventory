@@ -18,17 +18,17 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, deleteDoc, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { PlusCircle, Eye, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Item } from "./Items";
-import ManageStockForm from "@/components/ManageStockForm";
+import { useData } from "@/contexts/DataContext";
+import { AddStockForm } from "@/components/AddStockForm";
+import { InventoryDetailDialog } from "@/components/InventoryDetailDialog";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
@@ -41,25 +41,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import AddInventoryForm from "@/components/AddInventoryForm";
-import { useData } from "@/contexts/DataContext";
+
+// New Data Structures
+export interface InventoryEntry {
+  quantity: number;
+  purchasePrice: number;
+  supplier: string;
+  purchaseDate: any; // Firebase Timestamp
+  totalValue: number;
+}
 
 export interface InventoryDoc {
   id: string;
   branchId: string;
   itemId: string;
-  quantity: number;
-  totalValue?: number;
-  rackLocation?: string; // New field
-  restockAlertValue?: number; // New field
+  entries: InventoryEntry[];
 }
 
 export interface ProcessedInventory extends InventoryDoc {
   branchName: string;
   itemName: string;
   itemSku: string;
-  price?: number;
-  supplier?: string;
+  totalQuantity: number;
+  totalValue: number;
+  averagePrice: number;
 }
 
 const ITEMS_PER_PAGE = 15;
@@ -68,11 +73,14 @@ const Inventory = () => {
   const [inventory, setInventory] = useState<InventoryDoc[]>([]);
   const { branches, items, loading: dataLoading } = useData();
   const [loading, setLoading] = useState(true);
-  const [isManageStockFormOpen, setIsManageStockFormOpen] = useState(false);
-  const [selectedInventory, setSelectedInventory] = useState<ProcessedInventory | null>(null);
   const { role, user } = useAuth();
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
-  const [isAddInventoryFormOpen, setIsAddInventoryFormOpen] = useState(false);
+  
+  // State for dialogs
+  const [isAddStockOpen, setIsAddStockOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedInventory, setSelectedInventory] = useState<ProcessedInventory | null>(null);
+  
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [inventoryToDeleteId, setInventoryToDeleteId] = useState<string | null>(null);
 
@@ -83,7 +91,6 @@ const Inventory = () => {
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Inventory Management";
-    
     if (user && role === 'manager') {
       const fetchUserBranch = async () => {
         const userDocSnap = await getDoc(doc(db, "users", user.uid));
@@ -104,7 +111,7 @@ const Inventory = () => {
     setLoading(true);
     let inventoryQuery = query(
       collection(db, "inventory"),
-      orderBy("branchId"), // Order by something to ensure consistent pagination
+      orderBy("branchId"),
       orderBy("itemId"),
       limit(ITEMS_PER_PAGE)
     );
@@ -147,7 +154,7 @@ const Inventory = () => {
 
   const processedInventory: ProcessedInventory[] = useMemo(() => {
     const itemsMap = new Map(items.map(item => [item.id, item]));
-    const branchesMap = new Map(branches.map(branch => [branch.id, branch]));
+    const branchesMap = new Map(branches.map(branch => [branch.id, branch.name]));
 
     let filteredInventory = inventory;
     if (role === 'manager' && userBranchId) {
@@ -156,21 +163,32 @@ const Inventory = () => {
 
     return filteredInventory.map(inv => {
       const item = itemsMap.get(inv.itemId);
-      const price = item?.price;
+      const entries = inv.entries || [];
+      
+      const totalQuantity = entries.reduce((sum, entry) => sum + entry.quantity, 0);
+      const totalValue = entries.reduce((sum, entry) => sum + entry.totalValue, 0);
+      const averagePrice = totalQuantity > 0 ? totalValue / totalQuantity : 0;
+
       return {
         ...inv,
-        branchName: branchesMap.get(inv.branchId)?.name || "Unknown Branch",
+        branchName: branchesMap.get(inv.branchId) || "Unknown Branch",
         itemName: item?.name || "Unknown Item",
         itemSku: item?.sku || "N/A",
-        price: price,
-        supplier: item?.supplier,
+        totalQuantity,
+        totalValue,
+        averagePrice,
       };
-    });
+    }).filter(inv => inv.totalQuantity > 0); // Only show items with stock
   }, [inventory, items, branches, role, userBranchId]);
 
-  const handleManageStockClick = (inv: ProcessedInventory) => {
+  const handleAddStockClick = (inv: ProcessedInventory) => {
     setSelectedInventory(inv);
-    setIsManageStockFormOpen(true);
+    setIsAddStockOpen(true);
+  };
+
+  const handleViewDetailsClick = (inv: ProcessedInventory) => {
+    setSelectedInventory(inv);
+    setIsDetailOpen(true);
   };
 
   const handleDeleteClick = (inventoryId: string) => {
@@ -209,22 +227,6 @@ const Inventory = () => {
               <CardTitle>Inventory Management</CardTitle>
               <CardDescription>View and manage stock levels across branches.</CardDescription>
             </div>
-            {(role === 'admin' || role === 'manager') && (
-              <Dialog open={isAddInventoryFormOpen} onOpenChange={setIsAddInventoryFormOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-indigo-600 hover:bg-indigo-500 text-white">Add New Inventory</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Add New Inventory Record</DialogTitle>
-                    <DialogDescription className="text-slate-300">
-                      Create a new inventory record for an item at a specific branch.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AddInventoryForm setDialogOpen={setIsAddInventoryFormOpen} branches={branches} items={items} />
-                </DialogContent>
-              </Dialog>
-            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -234,11 +236,8 @@ const Inventory = () => {
                 <TableHead>Branch</TableHead>
                 <TableHead>Item Name</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Supplier/Toko</TableHead>
-                <TableHead>Rack Location</TableHead> {/* New Table Head */}
-                <TableHead className="text-center">Quantity</TableHead>
-                <TableHead className="text-center">Restock Alert</TableHead> {/* New Table Head */}
+                <TableHead className="text-center">Total Quantity</TableHead>
+                <TableHead className="text-right">Avg. Price</TableHead>
                 <TableHead className="text-right">Total Value</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -250,13 +249,10 @@ const Inventory = () => {
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-24" /></TableCell> {/* Skeleton for new column */}
                     <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                    <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell> {/* Skeleton for new column */}
                     <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : processedInventory.length > 0 ? (
@@ -265,25 +261,25 @@ const Inventory = () => {
                     <TableCell className="font-medium">{inv.branchName}</TableCell>
                     <TableCell>{inv.itemName}</TableCell>
                     <TableCell>{inv.itemSku}</TableCell>
-                    <TableCell>
-                      {inv.price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.price) : '-'}
-                    </TableCell>
-                    <TableCell>{inv.supplier || '-'}</TableCell>
-                    <TableCell>{inv.rackLocation || '-'}</TableCell> {/* Display new field */}
-                    <TableCell className="text-center">{inv.quantity}</TableCell>
-                    <TableCell className="text-center">{inv.restockAlertValue || '-'}</TableCell> {/* Display new field */}
+                    <TableCell className="text-center">{inv.totalQuantity}</TableCell>
                     <TableCell className="text-right">
-                      {inv.totalValue ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.totalValue) : '-'}
+                      {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(inv.averagePrice)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(inv.totalValue)}
                     </TableCell>
                     <TableCell className="text-right">
                       {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
-                        <div className="flex justify-end items-center space-x-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleManageStockClick(inv)}>
-                            <Pencil className="h-4 w-4" />
+                        <div className="flex justify-end items-center space-x-1">
+                          <Button variant="outline" size="sm" onClick={() => handleAddStockClick(inv)}>
+                            <PlusCircle className="h-4 w-4 mr-1" /> Add
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleViewDetailsClick(inv)}>
+                            <Eye className="h-4 w-4 mr-1" /> View
                           </Button>
                           {role === 'admin' && (
                             <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(inv.id)}>
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           )}
                         </div>
@@ -293,7 +289,7 @@ const Inventory = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center h-24"> {/* Update colspan */}
+                  <TableCell colSpan={7} className="text-center h-24">
                     No inventory records found.
                   </TableCell>
                 </TableRow>
@@ -312,23 +308,33 @@ const Inventory = () => {
         </CardContent>
       </Card>
 
-      {selectedInventory && (
-        <ManageStockForm
-          isOpen={isManageStockFormOpen}
-          onClose={() => {
-            setIsManageStockFormOpen(false);
-            setSelectedInventory(null);
-          }}
-          inventoryItem={selectedInventory}
-        />
-      )}
+      {/* Add Stock Dialog */}
+      <Dialog open={isAddStockOpen} onOpenChange={setIsAddStockOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Add Stock for {selectedInventory?.itemName}</DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Enter new stock details for this item at {selectedInventory?.branchName}.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedInventory && <AddStockForm inventoryItem={selectedInventory} onClose={() => setIsAddStockOpen(false)} />}
+        </DialogContent>
+      </Dialog>
 
+      {/* View Details Dialog */}
+      <InventoryDetailDialog 
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        inventoryItem={selectedInventory}
+      />
+
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-300">
-              This action cannot be undone. This will permanently delete this inventory record.
+              This action cannot be undone. This will permanently delete this entire inventory record and all its stock entries.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -40,9 +40,7 @@ export interface Item {
   sku: string;
   category: string;
   unit: string;
-  price?: number;
   description?: string;
-  supplier?: string; // Menambahkan properti supplier
 }
 
 const Items = () => {
@@ -128,35 +126,32 @@ const Items = () => {
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Item Name</TableHead>
+            <TableRow>
+              <TableHead>Item Name</TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Unit</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Supplier/Toko</TableHead> {/* Menambahkan kolom Supplier/Toko */}
-              <TableHead className="text-right">Actions</TableHead></TableRow>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index}><TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell> {/* Skeleton untuk kolom baru */}
-                  <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell></TableRow>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                </TableRow>
               ))
             ) : items.length > 0 ? (
               items.map((item) => (
-                <TableRow key={item.id}><TableCell className="font-medium">{item.name}</TableCell>
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell>{item.sku}</TableCell>
                   <TableCell>{item.category}</TableCell>
                   <TableCell>{item.unit}</TableCell>
-                  <TableCell>
-                    {item.price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.price) : '-'}
-                  </TableCell>
-                  <TableCell>{item.supplier || '-'}</TableCell> {/* Menampilkan data supplier */}
                   <TableCell className="text-right">
                     {isAdmin && (
                       <div className="flex justify-end items-center space-x-2">
@@ -168,12 +163,15 @@ const Items = () => {
                         </Button>
                       </div>
                     )}
-                  </TableCell></TableRow>
+                  </TableCell>
+                </TableRow>
               ))
             ) : (
-              <TableRow><TableCell colSpan={7} className="text-center"> {/* Mengubah colspan */}
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
                   No items found. Add one to get started.
-                </TableCell></TableRow>
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
