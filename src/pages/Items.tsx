@@ -16,12 +16,23 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import { Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import AddItemForm from "@/components/AddItemForm"; // Import AddItemForm
+import AddItemForm from "@/components/AddItemForm";
+import EditItemForm from "@/components/EditItemForm";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface Item {
   id: string;
@@ -37,7 +48,12 @@ const Items = () => {
   const [loading, setLoading] = useState(true);
   const { role } = useAuth();
   const isAdmin = role === 'admin';
-  const [isAddFormOpen, setIsAddFormOpen] = useState(false); // State for AddItemForm dialog
+  
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
@@ -59,6 +75,37 @@ const Items = () => {
 
     return () => unsubscribe();
   }, []);
+
+  const handleEditClick = (item: Item) => {
+    setSelectedItem(item);
+    setIsEditFormOpen(true);
+  };
+
+  const handleDeleteClick = (itemId: string) => {
+    setItemToDeleteId(itemId);
+    setIsDeleteAlertOpen(true);
+  };
+
+  const handleDeleteItem = async () => {
+    if (!itemToDeleteId) return;
+    try {
+      await deleteDoc(doc(db, "items", itemToDeleteId));
+      toast({
+        title: "Success",
+        description: "Item deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting item: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete item.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleteAlertOpen(false);
+      setItemToDeleteId(null);
+    }
+  };
 
   return (
     <Card>
@@ -107,10 +154,10 @@ const Items = () => {
                   <TableCell className="text-right">
                     {isAdmin && (
                       <div className="flex justify-end items-center space-x-2">
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(item.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -128,10 +175,36 @@ const Items = () => {
           </TableBody>
         </Table>
       </CardContent>
+      
       <AddItemForm
         isOpen={isAddFormOpen}
         onClose={() => setIsAddFormOpen(false)}
       />
+
+      <EditItemForm
+        isOpen={isEditFormOpen}
+        onClose={() => {
+          setIsEditFormOpen(false);
+          setSelectedItem(null);
+        }}
+        item={selectedItem}
+      />
+
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the item
+              from your inventory.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteItem}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
