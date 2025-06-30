@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Building2, Package, ArrowRightLeft, Bell, ArrowRight } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy, limit, getCountFromServer } from "firebase/firestore";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -72,40 +72,49 @@ const Index = () => {
       try {
         const lowStockThreshold = 10;
 
-        const branchesQuery = getDocs(collection(db, "branches"));
-        const itemsQuery = getDocs(collection(db, "items"));
-        const pendingTransfersQuery = getDocs(query(collection(db, "transfers"), where("status", "==", "pending")));
-        const lowStockQuery = getDocs(query(collection(db, "inventory"), where("quantity", "<", lowStockThreshold)));
+        // Use getCountFromServer for efficient counting
+        const branchesCountQuery = getCountFromServer(collection(db, "branches"));
+        const itemsCountQuery = getCountFromServer(collection(db, "items"));
+        const pendingTransfersCountQuery = getCountFromServer(query(collection(db, "transfers"), where("status", "==", "pending")));
+        const lowStockCountQuery = getCountFromServer(query(collection(db, "inventory"), where("quantity", "<", lowStockThreshold)));
+
+        // Queries that need full document data
         const recentTransfersQuery = getDocs(query(collection(db, "transfers"), orderBy("createdAt", "desc"), limit(5)));
         const allInventoryQuery = getDocs(collection(db, "inventory"));
+        const branchesQuery = getDocs(collection(db, "branches")); // Still needed for mapping names
+        const itemsQuery = getDocs(collection(db, "items")); // Still needed for mapping names
 
         const [
-          branchesSnapshot,
-          itemsSnapshot,
-          pendingTransfersSnapshot,
-          lowStockSnapshot,
+          branchesCountSnap,
+          itemsCountSnap,
+          pendingTransfersCountSnap,
+          lowStockCountSnap,
           recentTransfersSnapshot,
           allInventorySnapshot,
+          branchesSnapshot,
+          itemsSnapshot,
         ] = await Promise.all([
-          branchesQuery,
-          itemsQuery,
-          pendingTransfersQuery,
-          lowStockQuery,
+          branchesCountQuery,
+          itemsCountQuery,
+          pendingTransfersCountQuery,
+          lowStockCountQuery,
           recentTransfersQuery,
           allInventoryQuery,
+          branchesQuery,
+          itemsQuery,
         ]);
+
+        setStats({
+          totalBranches: branchesCountSnap.data().count,
+          totalItems: itemsCountSnap.data().count,
+          pendingTransfers: pendingTransfersCountSnap.data().count,
+          lowStockAlerts: lowStockCountSnap.data().count,
+        });
 
         const branchesData = branchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Branch[];
         const branchesMap = new Map(branchesData.map(b => [b.id, b.name]));
         const itemsData = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[];
         const itemsMap = new Map(itemsData.map(i => [i.id, i]));
-
-        setStats({
-          totalBranches: branchesSnapshot.size,
-          totalItems: itemsSnapshot.size,
-          pendingTransfers: pendingTransfersSnapshot.size,
-          lowStockAlerts: lowStockSnapshot.size,
-        });
 
         const processedTransfers = recentTransfersSnapshot.docs.map(doc => {
           const data = doc.data() as Transfer;
@@ -119,7 +128,9 @@ const Index = () => {
         });
         setRecentTransfers(processedTransfers);
 
-        const processedLowStock = lowStockSnapshot.docs.slice(0, 5).map(doc => {
+        // We still need the full low stock docs for the table, so we'll fetch them separately
+        const lowStockSnapshot = await getDocs(query(collection(db, "inventory"), where("quantity", "<", lowStockThreshold), limit(5)));
+        const processedLowStock = lowStockSnapshot.docs.map(doc => {
           const data = doc.data() as InventoryDoc;
           return {
             ...data,
