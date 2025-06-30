@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -31,9 +31,10 @@ import { Item } from "@/pages/Items";
 const formSchema = z.object({
   branchId: z.string().min(1, { message: "Please select a branch." }),
   itemId: z.string().min(1, { message: "Please select an item." }),
-  quantity: z.coerce.number().int().min(0, { message: "Quantity must be a non-negative integer." }),
-  rackLocation: z.string().optional(), // New field: Rack Location
-  restockAlertValue: z.coerce.number().int().min(0, { message: "Restock alert value must be a non-negative integer." }).default(5), // New field: Restock Alert Value
+  quantity: z.coerce.number().int().positive({ message: "Quantity must be a positive integer." }),
+  purchasePrice: z.coerce.number().min(0, { message: "Purchase price must be a non-negative number." }),
+  supplier: z.string().min(1, { message: "Supplier is required." }),
+  rackLocation: z.string().optional(),
 });
 
 interface AddInventoryFormProps {
@@ -51,8 +52,9 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
       branchId: "",
       itemId: "",
       quantity: 0,
-      rackLocation: "", // Default for new field
-      restockAlertValue: 5, // Default for new field
+      purchasePrice: 0,
+      supplier: "",
+      rackLocation: "",
     },
   });
 
@@ -60,35 +62,38 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
     setIsSubmitting(true);
     try {
       // Check if an inventory record for this branch and item already exists
-      const q = query(
-        collection(db, "inventory"),
-        where("branchId", "==", values.branchId),
-        where("itemId", "==", values.itemId)
-      );
-      const querySnapshot = await getDocs(q);
+      const inventoryId = `${values.branchId}_${values.itemId}`;
+      const inventoryRef = doc(db, "inventory", inventoryId);
+      const docSnap = await getDoc(inventoryRef);
 
-      if (!querySnapshot.empty) {
-        toast.error("Inventory record for this branch and item already exists. Please use 'Manage Stock' to update quantity.");
+      if (docSnap.exists()) {
+        toast.error("Inventory record for this item and branch already exists. Please use 'Add Stock' from the inventory list to add more quantity.");
         return;
       }
 
-      // Find the selected item to get its price
-      const selectedItem = items.find(item => item.id === values.itemId);
-      const price = selectedItem?.price || 0;
-      const totalValue = values.quantity * price;
+      // Create the first entry for the new inventory record
+      const firstEntry = {
+        quantity: values.quantity,
+        purchasePrice: values.purchasePrice,
+        supplier: values.supplier,
+        purchaseDate: serverTimestamp(),
+        totalValue: values.quantity * values.purchasePrice,
+      };
 
-      // Add the new inventory record with totalValue and new fields
-      await addDoc(collection(db, "inventory"), {
-        ...values,
-        totalValue,
+      // Add the new inventory record using setDoc with a specific ID
+      await setDoc(inventoryRef, {
+        branchId: values.branchId,
+        itemId: values.itemId,
+        rackLocation: values.rackLocation || "",
+        entries: [firstEntry],
       });
 
-      toast.success("Inventory record added successfully.");
+      toast.success("Initial stock record added successfully.");
       form.reset();
       setDialogOpen(false);
     } catch (error) {
-      console.error("Error adding inventory record: ", error);
-      toast.error("Failed to add inventory record. Please try again.");
+      console.error("Error adding initial stock record: ", error);
+      toast.error("Failed to add initial stock. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -160,6 +165,32 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
         />
         <FormField
           control={form.control}
+          name="purchasePrice"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-slate-200">Purchase Price (per unit)</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="Enter price per unit" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="supplier"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-slate-200">Supplier</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter supplier name" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="rackLocation"
           render={({ field }) => (
             <FormItem>
@@ -171,25 +202,12 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="restockAlertValue"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-slate-200">Restock Alert Value</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="e.g., 5" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting} className="bg-transparent border-white/20 text-white hover:bg-white/10">
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white">
-            {isSubmitting ? "Adding..." : "Add Inventory"}
+            {isSubmitting ? "Adding..." : "Add Initial Stock"}
           </Button>
         </div>
       </form>

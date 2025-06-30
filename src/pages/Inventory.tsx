@@ -24,12 +24,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useData } from "@/contexts/DataContext";
 import { AddStockForm } from "@/components/AddStockForm";
 import { InventoryDetailDialog } from "@/components/InventoryDetailDialog";
+import { AddInventoryForm } from "@/components/AddInventoryForm"; // Import the form
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -56,6 +58,7 @@ export interface InventoryDoc {
   branchId: string;
   itemId: string;
   entries: InventoryEntry[];
+  rackLocation?: string;
 }
 
 export interface ProcessedInventory extends InventoryDoc {
@@ -77,6 +80,7 @@ const Inventory = () => {
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
   
   // State for dialogs
+  const [isAddInventoryOpen, setIsAddInventoryOpen] = useState(false); // State for the new form
   const [isAddStockOpen, setIsAddStockOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedInventory, setSelectedInventory] = useState<ProcessedInventory | null>(null);
@@ -227,6 +231,29 @@ const Inventory = () => {
               <CardTitle>Inventory Management</CardTitle>
               <CardDescription>View and manage stock levels across branches.</CardDescription>
             </div>
+            {role === 'admin' && (
+              <Dialog open={isAddInventoryOpen} onOpenChange={setIsAddInventoryOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add Initial Stock
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Add Initial Stock</DialogTitle>
+                    <DialogDescription className="text-slate-300">
+                      Create the first inventory record for an item at a specific branch.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <AddInventoryForm 
+                    setDialogOpen={setIsAddInventoryOpen} 
+                    branches={branches} 
+                    items={items} 
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </CardHeader>
         <CardContent>
