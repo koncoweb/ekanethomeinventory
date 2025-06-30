@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile"; // Mengubah useMobile menjadi useIsMobile
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,7 @@ export function ResponsiveDialog({
   open,
   onOpenChange,
 }: ResponsiveDialogProps) {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   if (isMobile) {
     return (
