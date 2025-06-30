@@ -1,46 +1,68 @@
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, getDocs, runTransaction, doc, query, where, getDoc } from "firebase/firestore";
-import { useAuth } from "@/contexts/AuthContext";
+import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc, query, where } from "firebase/firestore";
 import { toast } from "sonner";
+import { NewTransferForm } from "@/components/NewTransferForm";
+import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Branch } from "./Branches";
 import { Item } from "./Items";
-import { InventoryDoc } from "./Inventory";
-import NewTransferForm from "@/components/NewTransferForm";
-import { ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-interface TransferDoc {
+export interface Transfer {
   id: string;
   fromBranchId: string;
   toBranchId: string;
   itemId: string;
   quantity: number;
-  status: 'pending' | 'completed' | 'rejected';
-  createdAt: any;
-}
-
-interface ProcessedTransfer extends TransferDoc {
-  fromBranchName: string;
-  toBranchName: string;
-  itemName: string;
-  itemSku: string;
+  status: "pending" | "completed" | "rejected";
+  createdAt: any; // Firebase Timestamp
 }
 
 const Transfers = () => {
-  const [transfers, setTransfers] = useState<TransferDoc[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [inventory, setInventory] = useState<InventoryDoc[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isAddTransferDialogOpen, setIsAddTransferDialogOpen] = useState(false);
+  const [transferToProcess, setTransferToProcess] = useState<Transfer | null>(null);
+  const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const { role, user } = useAuth();
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
-  const isAdminOrManager = role === 'admin' || role === 'manager';
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -51,9 +73,6 @@ const Transfers = () => {
         const itemsSnapshot = await getDocs(collection(db, "items"));
         setItems(itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[]);
 
-        const inventorySnapshot = await getDocs(collection(db, "inventory"));
-        setInventory(inventorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as InventoryDoc[]);
-
         if (user && role === 'manager') {
           const userDocSnap = await getDoc(doc(db, "users", user.uid));
           if (userDocSnap.exists()) {
@@ -62,18 +81,21 @@ const Transfers = () => {
         }
       } catch (error) {
         console.error("Error fetching initial data:", error);
-        toast.error("Failed to load required data.");
+        toast.error("Failed to load required data for transfers.");
       }
     };
 
     fetchInitialData();
 
     const unsubscribe = onSnapshot(collection(db, "transfers"), (snapshot) => {
-      const transfersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TransferDoc[];
-      setTransfers(transfersData.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds));
+      const transfersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Transfer[];
+      setTransfers(transfersData);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching transfers:", error);
+      console.error("Error fetching transfers: ", error);
       toast.error("Failed to fetch transfers data.");
       setLoading(false);
     });
@@ -82,148 +104,206 @@ const Transfers = () => {
   }, [user, role]);
 
   const processedTransfers = useMemo(() => {
-    const itemsMap = new Map(items.map(item => [item.id, item]));
-    const branchesMap = new Map(branches.map(branch => [branch.id, branch]));
+    const branchesMap = new Map(branches.map(branch => [branch.id, branch.name]));
+    const itemsMap = new Map(items.map(item => [item.id, item.name]));
 
-    return transfers.map(t => ({
-      ...t,
-      fromBranchName: branchesMap.get(t.fromBranchId)?.name || "N/A",
-      toBranchName: branchesMap.get(t.toBranchId)?.name || "N/A",
-      itemName: itemsMap.get(t.itemId)?.name || "Unknown Item",
-      itemSku: itemsMap.get(t.itemId)?.sku || "N/A",
+    return transfers.map(transfer => ({
+      ...transfer,
+      fromBranchName: branchesMap.get(transfer.fromBranchId) || "Unknown Branch",
+      toBranchName: branchesMap.get(transfer.toBranchId) || "Unknown Branch",
+      itemName: itemsMap.get(transfer.itemId) || "Unknown Item",
     }));
-  }, [transfers, items, branches]);
+  }, [transfers, branches, items]);
 
-  const handleApproveTransfer = async (transfer: ProcessedTransfer) => {
+  const handleProcessTransfer = async () => {
+    if (!transferToProcess || !actionType) return;
+
     try {
-      await runTransaction(db, async (transaction) => {
-        // 1. Define document references
-        const transferRef = doc(db, "transfers", transfer.id);
-        const fromInventoryQuery = query(collection(db, "inventory"), where("branchId", "==", transfer.fromBranchId), where("itemId", "==", transfer.itemId));
-        const toInventoryQuery = query(collection(db, "inventory"), where("branchId", "==", transfer.toBranchId), where("itemId", "==", transfer.itemId));
+      if (actionType === "approve") {
+        await runTransaction(db, async (transaction) => {
+          const fromInventoryRef = doc(db, "inventory", `${transferToProcess.fromBranchId}_${transferToProcess.itemId}`);
+          const toInventoryRef = doc(db, "inventory", `${transferToProcess.toBranchId}_${transferToProcess.itemId}`);
+          const transferRef = doc(db, "transfers", transferToProcess.id);
 
-        // 2. Get inventory documents
-        const fromInventorySnapshot = await getDocs(fromInventoryQuery);
-        if (fromInventorySnapshot.empty) throw new Error("Source inventory not found.");
-        const fromInventoryRef = fromInventorySnapshot.docs[0].ref;
-        const fromInventoryData = fromInventorySnapshot.docs[0].data();
+          const fromInventorySnap = await transaction.get(fromInventoryRef);
+          const toInventorySnap = await transaction.get(toInventoryRef);
 
-        // 3. Check for sufficient stock
-        if (fromInventoryData.quantity < transfer.quantity) {
-          throw new Error("Insufficient stock at source branch.");
-        }
+          if (!fromInventorySnap.exists() || fromInventorySnap.data().quantity < transferToProcess.quantity) {
+            throw new Error("Insufficient stock at source branch.");
+          }
 
-        // 4. Update source inventory
-        transaction.update(fromInventoryRef, { quantity: fromInventoryData.quantity - transfer.quantity });
-
-        // 5. Update destination inventory (or create if not exists)
-        const toInventorySnapshot = await getDocs(toInventoryQuery);
-        if (!toInventorySnapshot.empty) {
-          const toInventoryRef = toInventorySnapshot.docs[0].ref;
-          const toInventoryData = toInventorySnapshot.docs[0].data();
-          transaction.update(toInventoryRef, { quantity: toInventoryData.quantity + transfer.quantity });
-        } else {
-          const newInventoryRef = doc(collection(db, "inventory"));
-          transaction.set(newInventoryRef, {
-            branchId: transfer.toBranchId,
-            itemId: transfer.itemId,
-            quantity: transfer.quantity,
+          // Decrement from source
+          transaction.update(fromInventoryRef, {
+            quantity: fromInventorySnap.data().quantity - transferToProcess.quantity,
           });
-        }
 
-        // 6. Update transfer status
-        transaction.update(transferRef, { status: "completed" });
-      });
+          // Increment to destination or create if not exists
+          if (toInventorySnap.exists()) {
+            transaction.update(toInventoryRef, {
+              quantity: toInventorySnap.data().quantity + transferToProcess.quantity,
+            });
+          } else {
+            transaction.set(toInventoryRef, {
+              branchId: transferToProcess.toBranchId,
+              itemId: transferToProcess.itemId,
+              quantity: transferToProcess.quantity,
+            });
+          }
 
-      toast.success("Transfer approved and stock updated successfully!");
+          // Update transfer status
+          transaction.update(transferRef, { status: "completed" });
+        });
+        toast.success("Transfer approved and inventory updated.");
+      } else if (actionType === "reject") {
+        await updateDoc(doc(db, "transfers", transferToProcess.id), { status: "rejected" });
+        toast.info("Transfer rejected.");
+      }
     } catch (error: any) {
-      console.error("Transfer approval failed:", error);
-      toast.error(error.message || "Failed to approve transfer.");
+      console.error("Error processing transfer: ", error);
+      toast.error(error.message || "Failed to process transfer.");
+    } finally {
+      setTransferToProcess(null);
+      setActionType(null);
     }
   };
 
-  const getStatusBadge = (status: TransferDoc['status']) => {
-    switch (status) {
-      case 'pending': return <Badge variant="secondary">Pending</Badge>;
-      case 'completed': return <Badge variant="success">Completed</Badge>;
-      case 'rejected': return <Badge variant="destructive">Rejected</Badge>;
-      default: return <Badge>{status}</Badge>;
+  const canProcessTransfer = (transfer: Transfer) => {
+    if (role === 'admin') return true;
+    if (role === 'manager' && userBranchId) {
+      return transfer.fromBranchId === userBranchId || transfer.toBranchId === userBranchId;
     }
+    return false;
   };
 
   return (
     <>
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Inventory Transfers</CardTitle>
-              <CardDescription>Track and manage item movements between branches.</CardDescription>
+              <CardTitle>Transfer Management</CardTitle>
+              <CardDescription>Manage inventory transfers between branches.</CardDescription>
             </div>
-            {isAdminOrManager && (
-              <Button onClick={() => setIsFormOpen(true)}>New Transfer</Button>
-            )}
+            <Dialog open={isAddTransferDialogOpen} onOpenChange={setIsAddTransferDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>New Transfer</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Transfer Request</DialogTitle>
+                </DialogHeader>
+                <NewTransferForm setDialogOpen={setIsAddTransferDialogOpen} branches={branches} items={items} />
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>From Branch</TableHead>
+                <TableHead>To Branch</TableHead>
                 <TableHead>Item</TableHead>
-                <TableHead>Transfer Route</TableHead>
                 <TableHead className="text-center">Quantity</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell>
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                    <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : processedTransfers.length > 0 ? (
-                processedTransfers.map((t) => (
-                  <TableRow key={t.id}>
+                processedTransfers.map((transfer) => (
+                  <TableRow key={transfer.id}>
+                    <TableCell>{transfer.fromBranchName}</TableCell>
+                    <TableCell>{transfer.toBranchName}</TableCell>
+                    <TableCell>{transfer.itemName}</TableCell>
+                    <TableCell className="text-center">{transfer.quantity}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{t.itemName}</div>
-                      <div className="text-sm text-muted-foreground">{t.itemSku}</div>
+                      <Badge variant={
+                        transfer.status === "completed" ? "default" :
+                        transfer.status === "rejected" ? "destructive" : "secondary"
+                      }>
+                        {transfer.status.charAt(0).toUpperCase() + transfer.status.slice(1)}
+                      </Badge>
                     </TableCell>
-                    <TableCell className="flex items-center gap-2">
-                      <span>{t.fromBranchName}</span>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      <span>{t.toBranchName}</span>
-                    </TableCell>
-                    <TableCell className="text-center">{t.quantity}</TableCell>
-                    <TableCell className="text-center">{getStatusBadge(t.status)}</TableCell>
                     <TableCell className="text-right">
-                      {role === 'admin' && t.status === 'pending' && (
-                        <Button size="sm" onClick={() => handleApproveTransfer(t)}>Approve (Admin)</Button>
-                      )}
-                      {role === 'manager' && t.toBranchId === userBranchId && t.status === 'pending' && (
-                        <Button size="sm" onClick={() => handleApproveTransfer(t)}>Approve</Button>
+                      {transfer.status === "pending" && canProcessTransfer(transfer) && (
+                        <div className="flex justify-end space-x-2">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => { setTransferToProcess(transfer); setActionType("approve"); }}
+                              >
+                                Approve
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Approve Transfer?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action will move {transfer.quantity} of {transfer.itemName} from {transfer.fromBranchName} to {transfer.toBranchName}.
+                                  This cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleProcessTransfer}>Approve</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => { setTransferToProcess(transfer); setActionType("reject"); }}
+                              >
+                                Reject
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Reject Transfer?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action will reject the transfer request. This cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleProcessTransfer}>Reject</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">No transfers found.</TableCell>
+                  <TableCell colSpan={6} className="text-center h-24">
+                    No transfer requests found.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-      <NewTransferForm
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        branches={branches}
-        items={items}
-        inventory={inventory}
-      />
     </>
   );
 };
+
 export default Transfers;
