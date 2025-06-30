@@ -13,6 +13,7 @@ import Branches from "./pages/Branches";
 import Items from "./pages/Items";
 import Inventory from "./pages/Inventory";
 import Transfers from "./pages/Transfers";
+import Users from "./pages/Users";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
                 <Route path="/items" element={<Items />} />
                 <Route path="/inventory" element={<Inventory />} />
                 <Route path="/transfers" element={<Transfers />} />
+                <Route path="/users" element={<Users />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
