@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Card,
   CardHeader,
@@ -70,8 +70,8 @@ const Transfers = () => {
 
   // State untuk paginasi
   const [currentPage, setCurrentPage] = useState(1);
-  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [firstVisible, setFirstVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  // Menggunakan useRef untuk menyimpan kursor halaman agar tidak memicu re-render yang tidak perlu
+  const pageCursorsRef = useRef<Array<QueryDocumentSnapshot<DocumentData> | null>>([null]); // pageCursorsRef.current[0] untuk halaman 1, pageCursorsRef.current[1] untuk halaman 2, dst.
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
@@ -88,6 +88,12 @@ const Transfers = () => {
   }, [user, role]);
 
   useEffect(() => {
+    // Jangan fetch data transfer jika data global (branches/items) masih loading
+    if (dataLoading) {
+      setLoading(true); // Tetap tampilkan skeleton jika data global belum siap
+      return;
+    }
+
     setLoading(true);
     let transfersQuery = query(
       collection(db, "transfers"),
@@ -95,16 +101,15 @@ const Transfers = () => {
       limit(ITEMS_PER_PAGE)
     );
 
-    if (currentPage > 1 && lastVisible) {
+    // Dapatkan kursor untuk halaman saat ini
+    const currentCursor = pageCursorsRef.current[currentPage - 1];
+    if (currentCursor) {
       transfersQuery = query(
         collection(db, "transfers"),
         orderBy("createdAt", "desc"),
-        startAfter(lastVisible),
+        startAfter(currentCursor),
         limit(ITEMS_PER_PAGE)
       );
-    } else if (currentPage === 1) {
-      // Reset lastVisible if going back to first page
-      setLastVisible(null);
     }
 
     const unsubscribe = onSnapshot(transfersQuery, (snapshot) => {
@@ -116,12 +121,16 @@ const Transfers = () => {
       setLoading(false);
 
       if (snapshot.docs.length > 0) {
-        setFirstVisible(snapshot.docs[0]);
-        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+        const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+        // Simpan kursor untuk halaman berikutnya (currentPage + 1)
+        // Update ref secara langsung, tidak memicu re-render
+        if (pageCursorsRef.current.length <= currentPage) {
+          pageCursorsRef.current.push(lastDoc);
+        } else {
+          pageCursorsRef.current[currentPage] = lastDoc;
+        }
         setHasMore(snapshot.docs.length === ITEMS_PER_PAGE);
       } else {
-        setFirstVisible(null);
-        setLastVisible(null);
         setHasMore(false);
       }
     }, (error) => {
@@ -131,7 +140,7 @@ const Transfers = () => {
     });
 
     return () => unsubscribe();
-  }, [currentPage, lastVisible]); // lastVisible sebagai dependency untuk memicu fetch halaman berikutnya
+  }, [currentPage, dataLoading]); // Dependensi yang bersih: hanya berubah saat halaman atau status loading data global berubah
 
   const processedTransfers = useMemo(() => {
     const branchesMap = new Map(branches.map(branch => [branch.id, branch.name]));
@@ -226,10 +235,6 @@ const Transfers = () => {
   const handlePreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage(prev => prev - 1);
-      // Untuk kembali ke halaman sebelumnya, kita perlu query ulang dari awal
-      // atau menyimpan daftar lastVisible dari setiap halaman.
-      // Untuk kesederhanaan, kita akan reset lastVisible dan biarkan useEffect memicu ulang.
-      setLastVisible(null); 
     }
   };
 
