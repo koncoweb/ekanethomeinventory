@@ -43,6 +43,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Branch } from "./Branches";
 import { Item } from "./Items";
 import { Badge } from "@/components/ui/badge";
+import { useData } from "@/contexts/DataContext";
 
 export interface Transfer {
   id: string;
@@ -59,8 +60,7 @@ const ITEMS_PER_PAGE = 10; // Jumlah item per halaman
 
 const Transfers = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
+  const { branches, items, loading: dataLoading } = useData();
   const [loading, setLoading] = useState(true);
   const [isAddTransferDialogOpen, setIsAddTransferDialogOpen] = useState(false);
   const [transferToProcess, setTransferToProcess] = useState<Transfer | null>(null);
@@ -76,27 +76,15 @@ const Transfers = () => {
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Transfer Management";
-    const fetchInitialData = async () => {
-      try {
-        const branchesSnapshot = await getDocs(collection(db, "branches"));
-        setBranches(branchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Branch[]);
-
-        const itemsSnapshot = await getDocs(collection(db, "items"));
-        setItems(itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[]);
-
-        if (user && role === 'manager') {
-          const userDocSnap = await getDoc(doc(db, "users", user.uid));
-          if (userDocSnap.exists()) {
-            setUserBranchId(userDocSnap.data().branchId || null);
-          }
+    if (user && role === 'manager') {
+      const fetchUserBranch = async () => {
+        const userDocSnap = await getDoc(doc(db, "users", user.uid));
+        if (userDocSnap.exists()) {
+          setUserBranchId(userDocSnap.data().branchId || null);
         }
-      } catch (error) {
-        console.error("Error fetching initial data:", error);
-        toast.error("Failed to load required data for transfers.");
       }
-    };
-
-    fetchInitialData();
+      fetchUserBranch();
+    }
   }, [user, role]);
 
   useEffect(() => {
@@ -284,7 +272,7 @@ const Transfers = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {loading || dataLoading ? (
                 Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -381,7 +369,7 @@ const Transfers = () => {
           <div className="flex justify-between items-center mt-4">
             <Button
               onClick={handlePreviousPage}
-              disabled={currentPage === 1 || loading}
+              disabled={currentPage === 1 || loading || dataLoading}
               variant="outline"
               className="bg-transparent border-white/20 text-white hover:bg-white/10"
             >
@@ -390,7 +378,7 @@ const Transfers = () => {
             <span className="text-white">Page {currentPage}</span>
             <Button
               onClick={handleNextPage}
-              disabled={!hasMore || loading}
+              disabled={!hasMore || loading || dataLoading}
               variant="outline"
               className="bg-transparent border-white/20 text-white hover:bg-white/10"
             >

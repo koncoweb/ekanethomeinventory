@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { AuthProvider } from "./contexts/AuthContext";
+import { DataProvider } from "./contexts/DataContext"; // New import
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Branches from "./pages/Branches";
@@ -25,21 +26,23 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route element={<ProtectedRoute />}>
-              <Route element={<Layout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/branches" element={<Branches />} />
-                <Route path="/items" element={<Items />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/transfers" element={<Transfers />} />
-                <Route path="/users" element={<Users />} />
-                <Route path="/tutorial" element={<Tutorial />} /> {/* New route */}
+          <DataProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/branches" element={<Branches />} />
+                  <Route path="/items" element={<Items />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/transfers" element={<Transfers />} />
+                  <Route path="/users" element={<Users />} />
+                  <Route path="/tutorial" element={<Tutorial />} /> {/* New route */}
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </DataProvider>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

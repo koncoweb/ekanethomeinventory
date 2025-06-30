@@ -43,6 +43,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import AddInventoryForm from "@/components/AddInventoryForm";
+import { useData } from "@/contexts/DataContext";
 
 export interface InventoryDoc {
   id: string;
@@ -62,8 +63,7 @@ export interface ProcessedInventory extends InventoryDoc {
 
 const Inventory = () => {
   const [inventory, setInventory] = useState<InventoryDoc[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
+  const { branches, items, loading: dataLoading } = useData();
   const [loading, setLoading] = useState(true);
   const [isManageStockFormOpen, setIsManageStockFormOpen] = useState(false);
   const [selectedInventory, setSelectedInventory] = useState<ProcessedInventory | null>(null);
@@ -75,27 +75,16 @@ const Inventory = () => {
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Inventory Management";
-    const fetchInitialData = async () => {
-      try {
-        const branchesSnapshot = await getDocs(collection(db, "branches"));
-        setBranches(branchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Branch[]);
-
-        const itemsSnapshot = await getDocs(collection(db, "items"));
-        setItems(itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[]);
-
-        if (user && role === 'manager') {
-          const userDocSnap = await getDoc(doc(db, "users", user.uid));
-          if (userDocSnap.exists()) {
-            setUserBranchId(userDocSnap.data().branchId || null);
-          }
+    
+    if (user && role === 'manager') {
+      const fetchUserBranch = async () => {
+        const userDocSnap = await getDoc(doc(db, "users", user.uid));
+        if (userDocSnap.exists()) {
+          setUserBranchId(userDocSnap.data().branchId || null);
         }
-      } catch (error) {
-        console.error("Error fetching initial data:", error);
-        toast.error("Failed to load required data.");
       }
-    };
-
-    fetchInitialData();
+      fetchUserBranch();
+    }
 
     const unsubscribe = onSnapshot(collection(db, "inventory"), (snapshot) => {
       const inventoryData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as InventoryDoc[];
@@ -201,7 +190,7 @@ const Inventory = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {loading || dataLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>

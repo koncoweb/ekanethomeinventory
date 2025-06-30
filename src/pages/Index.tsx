@@ -28,6 +28,7 @@ import { Transfer } from "./Transfers";
 import { InventoryDoc } from "./Inventory";
 import { Button } from "@/components/ui/button";
 import BranchInventoryChart from "@/components/BranchInventoryChart";
+import { useData } from "@/contexts/DataContext";
 
 interface DashboardStats {
   totalBranches: number;
@@ -54,6 +55,7 @@ interface BranchInventoryData {
 
 const Index = () => {
   const { user } = useAuth();
+  const { branchesMap, itemsMap, loading: dataLoading } = useData();
   const [stats, setStats] = useState<DashboardStats>({
     totalBranches: 0,
     totalItems: 0,
@@ -67,6 +69,8 @@ const Index = () => {
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Dasbor";
+    if (dataLoading) return; // Wait for common data to be loaded
+
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
@@ -81,8 +85,6 @@ const Index = () => {
         // Queries that need full document data
         const recentTransfersQuery = getDocs(query(collection(db, "transfers"), orderBy("createdAt", "desc"), limit(5)));
         const allInventoryQuery = getDocs(collection(db, "inventory"));
-        const branchesQuery = getDocs(collection(db, "branches")); // Still needed for mapping names
-        const itemsQuery = getDocs(collection(db, "items")); // Still needed for mapping names
 
         const [
           branchesCountSnap,
@@ -91,8 +93,6 @@ const Index = () => {
           lowStockCountSnap,
           recentTransfersSnapshot,
           allInventorySnapshot,
-          branchesSnapshot,
-          itemsSnapshot,
         ] = await Promise.all([
           branchesCountQuery,
           itemsCountQuery,
@@ -100,8 +100,6 @@ const Index = () => {
           lowStockCountQuery,
           recentTransfersQuery,
           allInventoryQuery,
-          branchesQuery,
-          itemsQuery,
         ]);
 
         setStats({
@@ -111,11 +109,7 @@ const Index = () => {
           lowStockAlerts: lowStockCountSnap.data().count,
         });
 
-        const branchesData = branchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Branch[];
-        const branchesMap = new Map(branchesData.map(b => [b.id, b.name]));
-        const itemsData = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[];
-        const itemsMap = new Map(itemsData.map(i => [i.id, i]));
-
+        // Use context maps directly
         const processedTransfers = recentTransfersSnapshot.docs.map(doc => {
           const data = doc.data() as Transfer;
           return {
@@ -166,10 +160,10 @@ const Index = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [dataLoading, branchesMap, itemsMap]);
 
   const renderStat = (value: number) => {
-    if (loading) return <Skeleton className="h-8 w-12 bg-white/20" />;
+    if (loading || dataLoading) return <Skeleton className="h-8 w-12 bg-white/20" />;
     return <div className="text-2xl font-bold">{value}</div>;
   };
   
@@ -236,7 +230,7 @@ const Index = () => {
             <CardDescription className="text-slate-300">5 transfer inventaris terakhir.</CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loading || dataLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-8 w-full bg-white/20" />
                 <Skeleton className="h-8 w-full bg-white/20" />
@@ -281,7 +275,7 @@ const Index = () => {
             </Button>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loading || dataLoading ? (
               <div className="space-y-2">
                 <Skeleton className="h-6 w-full bg-white/20" />
                 <Skeleton className="h-6 w-full bg-white/20" />
@@ -313,7 +307,7 @@ const Index = () => {
         </GlassCard>
 
         <div className="lg:col-span-1 xl:col-span-2">
-          <BranchInventoryChart data={branchInventoryChartData} loading={loading} />
+          <BranchInventoryChart data={branchInventoryChartData} loading={loading || dataLoading} />
         </div>
       </div>
     </div>
