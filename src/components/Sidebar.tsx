@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, Package, Warehouse, ArrowRightLeft, LogOut, Home, Users } from "lucide-react";
+import { Building2, Package, Warehouse, ArrowRightLeft, LogOut, Home, Users, BookOpenText } from "lucide-react"; // Add BookOpenText
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/components/ui/use-toast";
@@ -12,6 +12,7 @@ const navLinks = [
   { to: "/items", icon: Package, label: "Item" },
   { to: "/inventory", icon: Warehouse, label: "Inventaris" },
   { to: "/transfers", icon: ArrowRightLeft, label: "Transfer" },
+  { to: "/tutorial", icon: BookOpenText, label: "Tutorial" }, // New link
 ];
 
 const adminLinks = [

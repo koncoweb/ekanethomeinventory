@@ -14,6 +14,7 @@ import Items from "./pages/Items";
 import Inventory from "./pages/Inventory";
 import Transfers from "./pages/Transfers";
 import Users from "./pages/Users";
+import Tutorial from "./pages/Tutorial"; // New import
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
                 <Route path="/inventory" element={<Inventory />} />
                 <Route path="/transfers" element={<Transfers />} />
                 <Route path="/users" element={<Users />} />
+                <Route path="/tutorial" element={<Tutorial />} /> {/* New route */}
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
