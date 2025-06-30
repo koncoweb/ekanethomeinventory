@@ -35,7 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, deleteDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { NewTransferForm } from "@/components/NewTransferForm";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,6 +44,7 @@ import { Branch } from "./Branches";
 import { Item } from "./Items";
 import { Badge } from "@/components/ui/badge";
 import { useData } from "@/contexts/DataContext";
+import { Trash2 } from "lucide-react"; // Import Trash2 icon
 
 export interface Transfer {
   id: string;
@@ -67,6 +68,8 @@ const Transfers = () => {
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const { role, user } = useAuth();
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false); // State for delete alert
+  const [transferToDeleteId, setTransferToDeleteId] = useState<string | null>(null); // State for transfer to delete
 
   // State untuk paginasi
   const [currentPage, setCurrentPage] = useState(1);
@@ -218,6 +221,20 @@ const Transfers = () => {
     }
   };
 
+  const handleDeleteTransfer = async () => {
+    if (!transferToDeleteId) return;
+    try {
+      await deleteDoc(doc(db, "transfers", transferToDeleteId));
+      toast.success("Transfer deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting transfer: ", error);
+      toast.error("Failed to delete transfer.");
+    } finally {
+      setIsDeleteAlertOpen(false);
+      setTransferToDeleteId(null);
+    }
+  };
+
   const canProcessTransfer = (transfer: Transfer) => {
     if (role === 'admin') return true;
     if (role === 'manager' && userBranchId) {
@@ -308,57 +325,84 @@ const Transfers = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      {transfer.status === "pending" && canProcessTransfer(transfer) && (
-                        <div className="flex justify-end space-x-2">
+                      <div className="flex justify-end space-x-2">
+                        {transfer.status === "pending" && canProcessTransfer(transfer) && (
+                          <>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => { setTransferToProcess(transfer); setActionType("approve"); }}
+                                >
+                                  Approve
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-white">Approve Transfer?</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-slate-300">
+                                    This action will move {transfer.quantity} of {transfer.itemName} from {transfer.fromBranchName} to {transfer.toBranchName}.
+                                    This cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleProcessTransfer}>Approve</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => { setTransferToProcess(transfer); setActionType("reject"); }}
+                                >
+                                  Reject
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-white">Reject Transfer?</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-slate-300">
+                                    This action will reject the transfer request. This cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleProcessTransfer} className="bg-red-600 hover:bg-red-500 text-white">Reject</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                        {role === 'admin' && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => { setTransferToProcess(transfer); setActionType("approve"); }}
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => { setTransferToDeleteId(transfer.id); setIsDeleteAlertOpen(true); }}
                               >
-                                Approve
+                                <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                               <AlertDialogHeader>
-                                <AlertDialogTitle className="text-white">Approve Transfer?</AlertDialogTitle>
+                                <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-slate-300">
-                                  This action will move {transfer.quantity} of {transfer.itemName} from {transfer.fromBranchName} to {transfer.toBranchName}.
-                                  This cannot be undone.
+                                  This action cannot be undone. This will permanently delete this transfer record.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleProcessTransfer}>Approve</AlertDialogAction>
+                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToDeleteId(null); setIsDeleteAlertOpen(false); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteTransfer} className="bg-red-600 hover:bg-red-500 text-white">Delete</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => { setTransferToProcess(transfer); setActionType("reject"); }}
-                              >
-                                Reject
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-white">Reject Transfer?</AlertDialogTitle>
-                                <AlertDialogDescription className="text-slate-300">
-                                  This action will reject the transfer request. This cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleProcessTransfer} className="bg-red-600 hover:bg-red-500 text-white">Reject</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
