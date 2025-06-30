@@ -45,7 +45,7 @@ const Sidebar = () => {
       <div className="p-4 border-b border-white/10">
         <NavLink to="/" className="flex items-center gap-2">
           <Package className="h-6 w-6 text-white" />
-          <h1 className="text-lg font-bold text-white">Eka Net Home Inventory</h1>
+          <h1 className="text-base font-bold text-white">Eka Net Home Inventory</h1>
         </NavLink>
       </div>
       <nav className="flex-1 p-4 space-y-1">

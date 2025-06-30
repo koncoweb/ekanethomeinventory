@@ -37,7 +37,8 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <h1 className="text-3xl font-bold text-white mb-6 text-center">Eka Net Home Inventory</h1>
       <Card className="w-full max-w-sm bg-black/20 backdrop-blur-lg border border-white/10 text-white">
         <CardHeader>
           <CardTitle className="text-2xl">Masuk</CardTitle>
