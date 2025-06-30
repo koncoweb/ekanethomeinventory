@@ -79,7 +79,9 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
                 <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select source branch" /></SelectTrigger></FormControl>
                 <SelectContent className="bg-black border-white/20 text-white">
                   {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10">{branch.name}</SelectItem>
+                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
+                      {branch.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -97,7 +99,9 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
                 <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select destination branch" /></SelectTrigger></FormControl>
                 <SelectContent className="bg-black border-white/20 text-white">
                   {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10">{branch.name}</SelectItem>
+                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
+                      {branch.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -115,7 +119,9 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
                 <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select item to transfer" /></SelectTrigger></FormControl>
                 <SelectContent className="bg-black border-white/20 text-white">
                   {items.map((item) => (
-                    <SelectItem key={item.id} value={item.id} className="hover:bg-white/10 focus:bg-white/10">{item.name} ({item.sku})</SelectItem>
+                    <SelectItem key={item.id} value={item.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
+                      {item.name} ({item.sku})
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -97,7 +97,7 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
                 </FormControl>
                 <SelectContent className="bg-black border-white/20 text-white">
                   {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10">
+                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
                       {branch.name}
                     </SelectItem>
                   ))}
@@ -121,7 +121,7 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
                 </FormControl>
                 <SelectContent className="bg-black border-white/20 text-white">
                   {items.map((item) => (
-                    <SelectItem key={item.id} value={item.id} className="hover:bg-white/10 focus:bg-white/10">
+                    <SelectItem key={item.id} value={item.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
                       {item.name} ({item.sku})
                     </SelectItem>
                   ))}
