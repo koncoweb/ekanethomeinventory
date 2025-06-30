@@ -19,8 +19,8 @@ const BranchInventoryChart: React.FC<BranchInventoryChartProps> = ({ data, loadi
   return (
     <Card className="md:col-span-2">
       <CardHeader>
-        <CardTitle>Inventory Distribution by Branch</CardTitle>
-        <CardDescription>Total quantity of items in each branch.</CardDescription>
+        <CardTitle>Distribusi Inventaris per Cabang</CardTitle>
+        <CardDescription>Total kuantitas item di setiap cabang.</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -36,7 +36,7 @@ const BranchInventoryChart: React.FC<BranchInventoryChartProps> = ({ data, loadi
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-sm text-muted-foreground text-center py-4">No inventory data available for branches.</p>
+          <p className="text-sm text-muted-foreground text-center py-4">Tidak ada data inventaris yang tersedia untuk cabang.</p>
         )}
       </CardContent>
     </Card>

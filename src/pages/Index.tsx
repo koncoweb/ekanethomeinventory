@@ -170,49 +170,49 @@ const Index = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, {user?.email}! Here's an overview of your inventory.</p>
+        <h1 className="text-2xl md:text-3xl font-bold">Dasbor</h1>
+        <p className="text-muted-foreground">Selamat datang kembali, {user?.email}! Berikut adalah gambaran umum inventaris Anda.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Branches</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Cabang</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {renderStat(stats.totalBranches)}
-            <p className="text-xs text-muted-foreground">All company locations</p>
+            <p className="text-xs text-muted-foreground">Semua lokasi perusahaan</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Items</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Item</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {renderStat(stats.totalItems)}
-            <p className="text-xs text-muted-foreground">Across all branches</p>
+            <p className="text-xs text-muted-foreground">Di semua cabang</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Transfers</CardTitle>
+            <CardTitle className="text-sm font-medium">Transfer Tertunda</CardTitle>
             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {renderStat(stats.pendingTransfers)}
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
+            <p className="text-xs text-muted-foreground">Menunggu persetujuan</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium">Peringatan Stok Rendah</CardTitle>
             <Bell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {renderStat(stats.lowStockAlerts)}
-            <p className="text-xs text-muted-foreground">Items need restocking</p>
+            <p className="text-xs text-muted-foreground">Item perlu diisi ulang</p>
           </CardContent>
         </Card>
       </div>
@@ -220,8 +220,8 @@ const Index = () => {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>The last 5 inventory transfers.</CardDescription>
+            <CardTitle>Aktivitas Terbaru</CardTitle>
+            <CardDescription>5 transfer inventaris terakhir.</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -250,7 +250,7 @@ const Index = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No recent transfers found.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">Tidak ada transfer terbaru ditemukan.</p>
             )}
           </CardContent>
         </Card>
@@ -258,12 +258,12 @@ const Index = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Low Stock Items</CardTitle>
-              <CardDescription>Items with quantities less than 10.</CardDescription>
+              <CardTitle>Item Stok Rendah</CardTitle>
+              <CardDescription>Item dengan kuantitas kurang dari 10.</CardDescription>
             </div>
             <Button asChild variant="outline" size="sm">
               <Link to="/inventory">
-                View All
+                Lihat Semua
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -280,8 +280,8 @@ const Index = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item</TableHead>
-                    <TableHead>Branch</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead>Cabang</TableHead>
+                    <TableHead className="text-right">Kuantitas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -295,7 +295,7 @@ const Index = () => {
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No low stock items. Great job!</p>
+              <p className="text-sm text-muted-foreground text-center py-4">Tidak ada item stok rendah. Kerja bagus!</p>
             )}
           </CardContent>
         </Card>
