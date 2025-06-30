@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, getDocs, doc, getDoc, deleteDoc } from "firebase/firestore";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react"; // Import Trash2
+import { Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Branch } from "./Branches";
@@ -33,7 +33,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog, // Import AlertDialog components
+  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -49,15 +49,15 @@ export interface InventoryDoc {
   branchId: string;
   itemId: string;
   quantity: number;
+  totalValue?: number;
 }
 
-interface ProcessedInventory extends InventoryDoc {
+export interface ProcessedInventory extends InventoryDoc {
   branchName: string;
   itemName: string;
   itemSku: string;
   price?: number;
   supplier?: string;
-  totalValue?: number; // Menambahkan properti totalValue
 }
 
 const Inventory = () => {
@@ -66,12 +66,12 @@ const Inventory = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [isManageStockFormOpen, setIsManageStockFormOpen] = useState(false);
-  const [selectedInventory, setSelectedInventory] = useState<InventoryDoc | null>(null);
+  const [selectedInventory, setSelectedInventory] = useState<ProcessedInventory | null>(null);
   const { role, user } = useAuth();
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
   const [isAddInventoryFormOpen, setIsAddInventoryFormOpen] = useState(false);
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false); // State untuk AlertDialog
-  const [inventoryToDeleteId, setInventoryToDeleteId] = useState<string | null>(null); // State untuk ID inventaris yang akan dihapus
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [inventoryToDeleteId, setInventoryToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Inventory Management";
@@ -110,7 +110,7 @@ const Inventory = () => {
     return () => unsubscribe();
   }, [user, role]);
 
-  const processedInventory = useMemo(() => {
+  const processedInventory: ProcessedInventory[] = useMemo(() => {
     const itemsMap = new Map(items.map(item => [item.id, item]));
     const branchesMap = new Map(branches.map(branch => [branch.id, branch]));
 
@@ -122,7 +122,8 @@ const Inventory = () => {
     return filteredInventory.map(inv => {
       const item = itemsMap.get(inv.itemId);
       const price = item?.price;
-      const totalValue = (price !== undefined && inv.quantity !== undefined) ? price * inv.quantity : undefined;
+      // The totalValue from Firestore is used directly for display.
+      // This ensures the displayed value is what's stored.
       return {
         ...inv,
         branchName: branchesMap.get(inv.branchId)?.name || "Unknown Branch",
@@ -130,12 +131,11 @@ const Inventory = () => {
         itemSku: item?.sku || "N/A",
         price: price,
         supplier: item?.supplier,
-        totalValue: totalValue, // Assign total value
       };
     });
   }, [inventory, items, branches, role, userBranchId]);
 
-  const handleManageStockClick = (inv: InventoryDoc) => {
+  const handleManageStockClick = (inv: ProcessedInventory) => {
     setSelectedInventory(inv);
     setIsManageStockFormOpen(true);
   };
@@ -196,7 +196,7 @@ const Inventory = () => {
                 <TableHead>Price</TableHead>
                 <TableHead>Supplier/Toko</TableHead>
                 <TableHead className="text-center">Quantity</TableHead>
-                <TableHead className="text-right">Total Value</TableHead> {/* Kolom baru: Total Value */}
+                <TableHead className="text-right">Total Value</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -210,7 +210,7 @@ const Inventory = () => {
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell> {/* Skeleton untuk Total Value */}
+                    <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                   </TableRow>
                 ))
@@ -227,14 +227,14 @@ const Inventory = () => {
                     <TableCell className="text-center">{inv.quantity}</TableCell>
                     <TableCell className="text-right">
                       {inv.totalValue ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.totalValue) : '-'}
-                    </TableCell> {/* Menampilkan Total Value */}
+                    </TableCell>
                     <TableCell className="text-right">
                       {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
                         <div className="flex justify-end items-center space-x-2">
                           <Button variant="ghost" size="icon" onClick={() => handleManageStockClick(inv)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          {role === 'admin' && ( // Hanya admin yang bisa menghapus
+                          {role === 'admin' && (
                             <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(inv.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -246,7 +246,7 @@ const Inventory = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center h-24"> {/* Mengubah colspan */}
+                  <TableCell colSpan={8} className="text-center h-24">
                     No inventory records found.
                   </TableCell>
                 </TableRow>

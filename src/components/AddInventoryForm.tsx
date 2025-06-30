@@ -68,7 +68,17 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
         return;
       }
 
-      await addDoc(collection(db, "inventory"), values);
+      // Find the selected item to get its price
+      const selectedItem = items.find(item => item.id === values.itemId);
+      const price = selectedItem?.price || 0;
+      const totalValue = values.quantity * price;
+
+      // Add the new inventory record with totalValue
+      await addDoc(collection(db, "inventory"), {
+        ...values,
+        totalValue,
+      });
+
       toast.success("Inventory record added successfully.");
       form.reset();
       setDialogOpen(false);

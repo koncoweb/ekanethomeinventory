@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { doc, runTransaction } from "firebase/firestore";
 import { toast } from "sonner";
-import { InventoryDoc } from "@/pages/Inventory";
+import { ProcessedInventory } from "@/pages/Inventory";
 
 const formSchema = z.object({
   quantityChange: z.coerce.number().int("Quantity must be an integer.").refine(val => val !== 0, "Quantity change cannot be zero."),
@@ -32,7 +32,7 @@ const formSchema = z.object({
 interface ManageStockFormProps {
   isOpen: boolean;
   onClose: () => void;
-  inventoryItem: InventoryDoc;
+  inventoryItem: ProcessedInventory;
 }
 
 const ManageStockForm = ({ isOpen, onClose, inventoryItem }: ManageStockFormProps) => {
@@ -63,7 +63,14 @@ const ManageStockForm = ({ isOpen, onClose, inventoryItem }: ManageStockFormProp
           throw new Error("Cannot reduce stock below zero.");
         }
 
-        transaction.update(inventoryRef, { quantity: newQuantity });
+        // Recalculate totalValue
+        const price = inventoryItem.price || 0;
+        const newTotalValue = newQuantity * price;
+
+        transaction.update(inventoryRef, { 
+          quantity: newQuantity,
+          totalValue: newTotalValue,
+        });
       });
 
       toast.success("Stock updated successfully.");
