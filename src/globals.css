@@ -114,12 +114,12 @@
 
   /* Posisikan area cetak di bagian atas halaman */
   .printable-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
     border: none !important;
     box-shadow: none !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   /* Sembunyikan elemen yang ditandai sebagai no-print */
@@ -138,6 +138,16 @@
     color: #000 !important;
   }
 
+  /* Force specific elements to have white background and black text */
+  .print-dialog-content {
+    background-color: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    padding: 20px !important;
+  }
+
   .printable-area table {
     width: 100%;
     border-collapse: collapse;
@@ -153,6 +163,7 @@
     background-color: #f2f2f2;
   }
 
+  /* Override specific text colors within printable area to black */
   .printable-area .text-white,
   .printable-area .text-slate-300,
   .printable-area .text-slate-200 {

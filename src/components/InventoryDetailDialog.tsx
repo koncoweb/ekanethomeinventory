@@ -47,7 +47,7 @@ export const InventoryDetailDialog = ({ isOpen, onClose, inventoryItem }: Invent
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl bg-black/20 backdrop-blur-lg border border-white/10 text-white inventory-detail-dialog">
+      <DialogContent className="sm:max-w-2xl bg-black/20 backdrop-blur-lg border border-white/10 text-white inventory-detail-dialog print-dialog-content">
         <DialogHeader>
           <DialogTitle className="text-white">Stock Details for {inventoryItem.itemName}</DialogTitle>
           <DialogDescription className="text-slate-300">
@@ -91,7 +91,7 @@ export const InventoryDetailDialog = ({ isOpen, onClose, inventoryItem }: Invent
           </Table>
         </ScrollArea>
         <DialogFooter className="no-print">
-          <Button onClick={handlePrint} variant="outline">
+          <Button onClick={handlePrint} variant="outline" className="text-black bg-white">
             <Printer className="h-4 w-4 mr-2" />
             Cetak Kartu Stok
           </Button>
