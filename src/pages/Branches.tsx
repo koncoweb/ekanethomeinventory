@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"; // Import AlertDialog components
+} from "@/components/ui/alert-dialog";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
@@ -40,6 +40,7 @@ import { AddBranchForm } from "@/components/AddBranchForm";
 import { EditBranchForm } from "@/components/EditBranchForm";
 import { Trash2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 
 export interface Branch {
   id: string;
@@ -51,10 +52,11 @@ export interface Branch {
 
 const Branches = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState(true); // State untuk loading
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
-  const [branchToDelete, setBranchToDelete] = useState<string | null>(null); // State untuk menyimpan ID cabang yang akan dihapus
+  const [branchToDelete, setBranchToDelete] = useState<string | null>(null);
   const { role } = useAuth();
   const isAdmin = role === 'admin';
 
@@ -65,6 +67,15 @@ const Branches = () => {
         ...doc.data(),
       })) as Branch[];
       setBranches(branchesData);
+      setLoading(false); // Set loading ke false setelah data diterima
+    }, (error) => {
+      console.error("Error fetching branches: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch branches data.",
+        variant: "destructive",
+      });
+      setLoading(false); // Juga set loading ke false jika ada error
     });
 
     return () => unsubscribe();
@@ -85,7 +96,7 @@ const Branches = () => {
         title: "Success",
         description: "Branch deleted successfully.",
       });
-      setBranchToDelete(null); // Reset state setelah penghapusan
+      setBranchToDelete(null);
     } catch (error) {
       console.error("Error deleting branch: ", error);
       toast({
@@ -138,7 +149,18 @@ const Branches = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {branches.length > 0 ? (
+            {loading ? (
+              // Tampilkan skeleton loader saat loading
+              Array.from({ length: 3 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : branches.length > 0 ? (
               branches.map((branch) => (
                 <TableRow key={branch.id}>
                   <TableCell>{branch.name}</TableCell>
@@ -160,7 +182,7 @@ const Branches = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setBranchToDelete(branch.id)} // Set ID cabang yang akan dihapus
+                              onClick={() => setBranchToDelete(branch.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
