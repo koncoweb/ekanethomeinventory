@@ -27,6 +27,7 @@ import { collection, onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import { AddBranchForm } from "@/components/AddBranchForm";
 import { Trash2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
 
 export interface Branch {
   id: string;
@@ -37,6 +38,8 @@ export interface Branch {
 const Branches = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { role } = useAuth(); // Dapatkan peran pengguna dari AuthContext
+  const isAdmin = role === 'admin'; // Cek apakah pengguna adalah admin
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "branches"), (snapshot) => {
@@ -51,6 +54,14 @@ const Branches = () => {
   }, []);
 
   const handleDelete = async (id: string) => {
+    if (!isAdmin) { // Tambahkan cek peran sebelum menghapus
+      toast({
+        title: "Akses Ditolak",
+        description: "Anda tidak memiliki izin untuk menghapus cabang.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (window.confirm("Are you sure you want to delete this branch?")) {
       try {
         await deleteDoc(doc(db, "branches", id));
@@ -79,17 +90,19 @@ const Branches = () => {
               Here you can manage your company branches.
             </CardDescription>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>Add Branch</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Branch</DialogTitle>
-              </DialogHeader>
-              <AddBranchForm setDialogOpen={setIsDialogOpen} />
-            </DialogContent>
-          </Dialog>
+          {isAdmin && ( // Tampilkan tombol "Add Branch" hanya jika admin
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>Add Branch</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Branch</DialogTitle>
+                </DialogHeader>
+                <AddBranchForm setDialogOpen={setIsDialogOpen} />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -108,13 +121,15 @@ const Branches = () => {
                   <TableCell>{branch.name}</TableCell>
                   <TableCell>{branch.location}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(branch.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {isAdmin && ( // Tampilkan tombol hapus hanya jika admin
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(branch.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
