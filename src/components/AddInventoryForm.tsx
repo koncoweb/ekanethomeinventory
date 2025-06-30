@@ -32,6 +32,8 @@ const formSchema = z.object({
   branchId: z.string().min(1, { message: "Please select a branch." }),
   itemId: z.string().min(1, { message: "Please select an item." }),
   quantity: z.coerce.number().int().min(0, { message: "Quantity must be a non-negative integer." }),
+  rackLocation: z.string().optional(), // New field: Rack Location
+  restockAlertValue: z.coerce.number().int().min(0, { message: "Restock alert value must be a non-negative integer." }).default(5), // New field: Restock Alert Value
 });
 
 interface AddInventoryFormProps {
@@ -49,6 +51,8 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
       branchId: "",
       itemId: "",
       quantity: 0,
+      rackLocation: "", // Default for new field
+      restockAlertValue: 5, // Default for new field
     },
   });
 
@@ -73,7 +77,7 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
       const price = selectedItem?.price || 0;
       const totalValue = values.quantity * price;
 
-      // Add the new inventory record with totalValue
+      // Add the new inventory record with totalValue and new fields
       await addDoc(collection(db, "inventory"), {
         ...values,
         totalValue,
@@ -149,6 +153,32 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
               <FormLabel className="text-slate-200">Initial Quantity</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="Enter initial quantity" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="rackLocation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-slate-200">Rack Location (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., A1, Warehouse-Shelf-3" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="restockAlertValue"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-slate-200">Restock Alert Value</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="e.g., 5" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
               </FormControl>
               <FormMessage />
             </FormItem>

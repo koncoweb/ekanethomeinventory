@@ -50,6 +50,8 @@ export interface InventoryDoc {
   itemId: string;
   quantity: number;
   totalValue?: number;
+  rackLocation?: string; // New field
+  restockAlertValue?: number; // New field
 }
 
 export interface ProcessedInventory extends InventoryDoc {
@@ -234,7 +236,9 @@ const Inventory = () => {
                 <TableHead>SKU</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Supplier/Toko</TableHead>
+                <TableHead>Rack Location</TableHead> {/* New Table Head */}
                 <TableHead className="text-center">Quantity</TableHead>
+                <TableHead className="text-center">Restock Alert</TableHead> {/* New Table Head */}
                 <TableHead className="text-right">Total Value</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -248,7 +252,9 @@ const Inventory = () => {
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell> {/* Skeleton for new column */}
                     <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                    <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell> {/* Skeleton for new column */}
                     <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                   </TableRow>
@@ -263,7 +269,9 @@ const Inventory = () => {
                       {inv.price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.price) : '-'}
                     </TableCell>
                     <TableCell>{inv.supplier || '-'}</TableCell>
+                    <TableCell>{inv.rackLocation || '-'}</TableCell> {/* Display new field */}
                     <TableCell className="text-center">{inv.quantity}</TableCell>
+                    <TableCell className="text-center">{inv.restockAlertValue || '-'}</TableCell> {/* Display new field */}
                     <TableCell className="text-right">
                       {inv.totalValue ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.totalValue) : '-'}
                     </TableCell>
@@ -285,7 +293,7 @@ const Inventory = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center h-24">
+                  <TableCell colSpan={10} className="text-center h-24"> {/* Update colspan */}
                     No inventory records found.
                   </TableCell>
                 </TableRow>
