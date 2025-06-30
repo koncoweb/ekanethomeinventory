@@ -65,6 +65,7 @@ const Transfers = () => {
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
 
   useEffect(() => {
+    document.title = "Eka Net Home - Inventory System - Transfer Management";
     const fetchInitialData = async () => {
       try {
         const branchesSnapshot = await getDocs(collection(db, "branches"));

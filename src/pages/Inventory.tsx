@@ -49,6 +49,7 @@ const Inventory = () => {
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
 
   useEffect(() => {
+    document.title = "Eka Net Home - Inventory System - Inventory Management";
     const fetchInitialData = async () => {
       try {
         const branchesSnapshot = await getDocs(collection(db, "branches"));

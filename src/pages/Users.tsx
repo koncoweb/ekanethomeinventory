@@ -51,6 +51,7 @@ const Users = () => {
   const isAdmin = role === 'admin';
 
   useEffect(() => {
+    document.title = "Eka Net Home - Inventory System - User Management";
     const fetchBranches = async () => {
       try {
         const branchesSnapshot = await getDocs(collection(db, "branches"));

@@ -66,6 +66,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = "Eka Net Home - Inventory System - Dasbor";
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
@@ -171,7 +172,7 @@ const Index = () => {
     <div className="space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl md:text-3xl font-bold text-white">Dasbor</h1>
-        <p className="text-slate-300">Selamat datang kembali, {user?.email}! Berikut adalah gambaran umum inventaris Anda.</p>
+        <p className="text-slate-300">Selamat datang kembali, {user?.email}!</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

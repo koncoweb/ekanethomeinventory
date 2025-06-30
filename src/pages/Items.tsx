@@ -56,6 +56,7 @@ const Items = () => {
   const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
+    document.title = "Eka Net Home - Inventory System - Item Master Management";
     const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
       const itemsData = snapshot.docs.map((doc) => ({
         id: doc.id,

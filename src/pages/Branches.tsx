@@ -62,6 +62,7 @@ const Branches = () => {
   const isAdmin = role === 'admin';
 
   useEffect(() => {
+    document.title = "Eka Net Home - Inventory System - Manajemen Cabang";
     const unsubscribe = onSnapshot(collection(db, "branches"), (snapshot) => {
       const branchesData = snapshot.docs.map((doc) => ({
         id: doc.id,
