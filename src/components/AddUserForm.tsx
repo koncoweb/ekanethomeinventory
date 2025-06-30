@@ -122,7 +122,7 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
               <FormLabel className="text-slate-200">Role</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
-                <SelectContent className="bg-black border-white/20">
+                <SelectContent className="bg-black border-white/20 text-white">
                   <SelectItem value="admin" className="hover:bg-white/10 focus:bg-white/10 text-white">Admin</SelectItem>
                   <SelectItem value="manager" className="hover:bg-white/10 focus:bg-white/10 text-white">Manager</SelectItem>
                 </SelectContent>
@@ -140,7 +140,7 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
                 <FormLabel className="text-slate-200">Branch</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select a branch" /></SelectTrigger></FormControl>
-                  <SelectContent className="bg-black border-white/20">
+                  <SelectContent className="bg-black border-white/20 text-white">
                     {branches.map((branch) => (
                       <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
                         {branch.name}
