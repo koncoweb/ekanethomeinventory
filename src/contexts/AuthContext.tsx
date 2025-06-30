@@ -26,8 +26,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
+            // Pastikan role adalah string, jika tidak, set ke null
+            const fetchedRole = typeof userData.role === 'string' ? userData.role : null;
             setUser(firebaseUser);
-            setRole(userData.role as string || null); // Asumsikan ada field 'role'
+            setRole(fetchedRole);
           } else {
             // Pengguna ada di Auth tapi tidak di koleksi 'users' Firestore
             setUser(firebaseUser);
