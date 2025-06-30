@@ -66,9 +66,9 @@ export const EditBranchForm = ({ setDialogOpen, branch }: EditBranchFormProps) =
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Branch Name</FormLabel>
+              <FormLabel className="text-slate-200">Branch Name</FormLabel>
               <FormControl>
-                <Input placeholder="Main Branch" {...field} />
+                <Input placeholder="Main Branch" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -79,9 +79,9 @@ export const EditBranchForm = ({ setDialogOpen, branch }: EditBranchFormProps) =
           name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Location</FormLabel>
+              <FormLabel className="text-slate-200">Location</FormLabel>
               <FormControl>
-                <Input placeholder="New York" {...field} />
+                <Input placeholder="New York" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -92,9 +92,9 @@ export const EditBranchForm = ({ setDialogOpen, branch }: EditBranchFormProps) =
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Address</FormLabel>
+              <FormLabel className="text-slate-200">Address</FormLabel>
               <FormControl>
-                <Input placeholder="123 Main St" {...field} />
+                <Input placeholder="123 Main St" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -105,15 +105,15 @@ export const EditBranchForm = ({ setDialogOpen, branch }: EditBranchFormProps) =
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone Number</FormLabel>
+              <FormLabel className="text-slate-200">Phone Number</FormLabel>
               <FormControl>
-                <Input placeholder="(555) 123-4567" {...field} />
+                <Input placeholder="(555) 123-4567" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">Save Changes</Button>
+        <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white">Save Changes</Button>
       </form>
     </Form>
   );

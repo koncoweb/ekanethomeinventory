@@ -115,10 +115,10 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
         <DialogHeader>
-          <DialogTitle>Add New Item</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-white">Add New Item</DialogTitle>
+          <DialogDescription className="text-slate-300">
             Fill in the details for the new inventory item.
           </DialogDescription>
         </DialogHeader>
@@ -129,9 +129,9 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Item Name</FormLabel>
+                  <FormLabel className="text-slate-200">Item Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Fiber Optic Router" {...field} />
+                    <Input placeholder="e.g., Fiber Optic Router" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -140,14 +140,14 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <FormLabel>SKU</FormLabel>
+                <FormLabel className="text-slate-200">SKU</FormLabel>
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="auto-sku-switch"
                     checked={autoGenerateSku}
                     onCheckedChange={setAutoGenerateSku}
                   />
-                  <Label htmlFor="auto-sku-switch">Auto-generate</Label>
+                  <Label htmlFor="auto-sku-switch" className="text-slate-200">Auto-generate</Label>
                 </div>
               </div>
               <FormField
@@ -156,7 +156,7 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input placeholder="e.g., FIB-123" {...field} disabled={autoGenerateSku} />
+                      <Input placeholder="e.g., FIB-123" {...field} disabled={autoGenerateSku} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -169,16 +169,16 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel className="text-slate-200">Category</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-black/30 border-white/20 text-white">
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="bg-black border-white/20 text-white">
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
+                        <SelectItem key={category} value={category} className="hover:bg-white/10 focus:bg-white/10">
                           {category}
                         </SelectItem>
                       ))}
@@ -194,9 +194,9 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
               name="unit"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Unit</FormLabel>
+                  <FormLabel className="text-slate-200">Unit</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Pcs" {...field} />
+                    <Input placeholder="e.g., Pcs" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -207,19 +207,19 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel className="text-slate-200">Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="e.g., High-performance router for fiber optic connections" {...field} />
+                    <Textarea placeholder="e.g., High-performance router for fiber optic connections" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="bg-transparent border-white/20 text-white hover:bg-white/10">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white">
                 {isSubmitting ? "Adding..." : "Add Item"}
               </Button>
             </DialogFooter>

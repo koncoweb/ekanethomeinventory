@@ -79,10 +79,10 @@ const ManageStockForm = ({ isOpen, onClose, inventoryItem }: ManageStockFormProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
         <DialogHeader>
-          <DialogTitle>Manage Stock for {inventoryItem.itemName}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-white">Manage Stock for {inventoryItem.itemName}</DialogTitle>
+          <DialogDescription className="text-slate-300">
             Adjust the quantity for this item at {inventoryItem.branchName}.
             Current stock: {inventoryItem.quantity}
           </DialogDescription>
@@ -94,15 +94,15 @@ const ManageStockForm = ({ isOpen, onClose, inventoryItem }: ManageStockFormProp
               name="quantityChange"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantity Change (e.g., 5 for add, -3 for remove)</FormLabel>
-                  <FormControl><Input type="number" placeholder="Enter quantity change" {...field} /></FormControl>
+                  <FormLabel className="text-slate-200">Quantity Change (e.g., 5 for add, -3 for remove)</FormLabel>
+                  <FormControl><Input type="number" placeholder="Enter quantity change" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Changes"}</Button>
+              <Button type="button" variant="ghost" onClick={onClose} className="bg-transparent border-white/20 text-white hover:bg-white/10">Cancel</Button>
+              <Button type="submit" disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white">{isSubmitting ? "Saving..." : "Save Changes"}</Button>
             </DialogFooter>
           </form>
         </Form>
