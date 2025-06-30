@@ -37,18 +37,18 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-sm">
+    <div className="flex items-center justify-center min-h-screen">
+      <Card className="w-full max-w-sm bg-black/20 backdrop-blur-lg border border-white/10 text-white">
         <CardHeader>
           <CardTitle className="text-2xl">Masuk</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-slate-300">
             Masukkan email Anda di bawah ini untuk masuk ke akun Anda.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-slate-200">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -57,10 +57,11 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
+                className="bg-black/30 border-white/20 text-white placeholder:text-slate-400"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Kata Sandi</Label>
+              <Label htmlFor="password" className="text-slate-200">Kata Sandi</Label>
               <Input
                 id="password"
                 type="password"
@@ -68,9 +69,10 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setMpassword(e.target.value)}
                 disabled={loading}
+                className="bg-black/30 border-white/20 text-white"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white" disabled={loading}>
               {loading ? "Masuk..." : "Masuk"}
             </Button>
           </form>

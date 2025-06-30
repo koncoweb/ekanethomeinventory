@@ -41,11 +41,11 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 bg-card border-r flex-col hidden md:flex">
-      <div className="p-4 border-b">
+    <aside className="w-64 bg-black/20 backdrop-blur-lg border-r border-white/10 flex-col hidden md:flex">
+      <div className="p-4 border-b border-white/10">
         <NavLink to="/" className="flex items-center gap-2">
-          <Package className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold">ISP Inventory</h1>
+          <Package className="h-6 w-6 text-white" />
+          <h1 className="text-xl font-bold text-white">ISP Inventory</h1>
         </NavLink>
       </div>
       <nav className="flex-1 p-4 space-y-1">
@@ -55,8 +55,8 @@ const Sidebar = () => {
             to={link.to}
             end={link.to === "/"}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${
-                isActive ? "bg-muted text-primary font-semibold" : ""
+              `flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 transition-all hover:text-white hover:bg-white/10 ${
+                isActive ? "bg-white/20 text-white font-semibold" : ""
               }`
             }
           >
@@ -66,7 +66,7 @@ const Sidebar = () => {
         ))}
         {role === 'admin' && (
           <>
-            <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase">
+            <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase">
               Admin
             </div>
             {adminLinks.map((link) => (
@@ -74,8 +74,8 @@ const Sidebar = () => {
                 key={link.label}
                 to={link.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${
-                    isActive ? "bg-muted text-primary font-semibold" : ""
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 transition-all hover:text-white hover:bg-white/10 ${
+                    isActive ? "bg-white/20 text-white font-semibold" : ""
                   }`
                 }
               >
@@ -86,8 +86,8 @@ const Sidebar = () => {
           </>
         )}
       </nav>
-      <div className="p-4 mt-auto border-t">
-        <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+      <div className="p-4 mt-auto border-t border-white/10">
+        <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-white/10 hover:text-white" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Keluar
         </Button>

@@ -96,6 +96,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gray-900 text-slate-50;
+    background-image: linear-gradient(to bottom right, #0f172a, #1e1b4b, #0f172a);
   }
 }

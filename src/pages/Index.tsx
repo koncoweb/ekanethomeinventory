@@ -27,7 +27,7 @@ import { Branch } from "./Branches";
 import { Transfer } from "./Transfers";
 import { InventoryDoc } from "./Inventory";
 import { Button } from "@/components/ui/button";
-import BranchInventoryChart from "@/components/BranchInventoryChart"; // Import komponen grafik baru
+import BranchInventoryChart from "@/components/BranchInventoryChart";
 
 interface DashboardStats {
   totalBranches: number;
@@ -62,7 +62,7 @@ const Index = () => {
   });
   const [recentTransfers, setRecentTransfers] = useState<ProcessedTransfer[]>([]);
   const [lowStockItems, setLowStockItems] = useState<ProcessedLowStockItem[]>([]);
-  const [branchInventoryChartData, setBranchInventoryChartData] = useState<BranchInventoryData[]>([]); // State baru untuk data grafik
+  const [branchInventoryChartData, setBranchInventoryChartData] = useState<BranchInventoryData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,13 +71,12 @@ const Index = () => {
       try {
         const lowStockThreshold = 10;
 
-        // Define all queries
         const branchesQuery = getDocs(collection(db, "branches"));
         const itemsQuery = getDocs(collection(db, "items"));
         const pendingTransfersQuery = getDocs(query(collection(db, "transfers"), where("status", "==", "pending")));
         const lowStockQuery = getDocs(query(collection(db, "inventory"), where("quantity", "<", lowStockThreshold)));
         const recentTransfersQuery = getDocs(query(collection(db, "transfers"), orderBy("createdAt", "desc"), limit(5)));
-        const allInventoryQuery = getDocs(collection(db, "inventory")); // Query baru untuk semua inventaris
+        const allInventoryQuery = getDocs(collection(db, "inventory"));
 
         const [
           branchesSnapshot,
@@ -85,23 +84,21 @@ const Index = () => {
           pendingTransfersSnapshot,
           lowStockSnapshot,
           recentTransfersSnapshot,
-          allInventorySnapshot, // Snapshot baru
+          allInventorySnapshot,
         ] = await Promise.all([
           branchesQuery,
           itemsQuery,
           pendingTransfersQuery,
           lowStockQuery,
           recentTransfersQuery,
-          allInventoryQuery, // Tambahkan ke Promise.all
+          allInventoryQuery,
         ]);
 
-        // Create maps for easy data lookup
         const branchesData = branchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Branch[];
         const branchesMap = new Map(branchesData.map(b => [b.id, b.name]));
         const itemsData = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[];
         const itemsMap = new Map(itemsData.map(i => [i.id, i]));
 
-        // Set stats
         setStats({
           totalBranches: branchesSnapshot.size,
           totalItems: itemsSnapshot.size,
@@ -109,7 +106,6 @@ const Index = () => {
           lowStockAlerts: lowStockSnapshot.size,
         });
 
-        // Process and set recent transfers
         const processedTransfers = recentTransfersSnapshot.docs.map(doc => {
           const data = doc.data() as Transfer;
           return {
@@ -122,7 +118,6 @@ const Index = () => {
         });
         setRecentTransfers(processedTransfers);
 
-        // Process and set low stock items (show up to 5)
         const processedLowStock = lowStockSnapshot.docs.slice(0, 5).map(doc => {
           const data = doc.data() as InventoryDoc;
           return {
@@ -134,7 +129,6 @@ const Index = () => {
         });
         setLowStockItems(processedLowStock);
 
-        // Process and set branch inventory chart data
         const inventoryByBranch: { [key: string]: number } = {};
         allInventorySnapshot.docs.forEach(doc => {
           const data = doc.data() as InventoryDoc;
@@ -163,84 +157,90 @@ const Index = () => {
   }, []);
 
   const renderStat = (value: number) => {
-    if (loading) return <Skeleton className="h-8 w-12" />;
+    if (loading) return <Skeleton className="h-8 w-12 bg-white/20" />;
     return <div className="text-2xl font-bold">{value}</div>;
   };
+  
+  const GlassCard = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+    <Card className={`bg-black/20 backdrop-blur-lg border border-white/10 text-white ${className}`}>
+      {children}
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-bold">Dasbor</h1>
-        <p className="text-muted-foreground">Selamat datang kembali, {user?.email}! Berikut adalah gambaran umum inventaris Anda.</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-white">Dasbor</h1>
+        <p className="text-slate-300">Selamat datang kembali, {user?.email}! Berikut adalah gambaran umum inventaris Anda.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <GlassCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Cabang</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-200">Total Cabang</CardTitle>
+            <Building2 className="h-4 w-4 text-slate-300" />
           </CardHeader>
           <CardContent>
             {renderStat(stats.totalBranches)}
-            <p className="text-xs text-muted-foreground">Semua lokasi perusahaan</p>
+            <p className="text-xs text-slate-400">Semua lokasi perusahaan</p>
           </CardContent>
-        </Card>
-        <Card>
+        </GlassCard>
+        <GlassCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Item</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-200">Total Item</CardTitle>
+            <Package className="h-4 w-4 text-slate-300" />
           </CardHeader>
           <CardContent>
             {renderStat(stats.totalItems)}
-            <p className="text-xs text-muted-foreground">Di semua cabang</p>
+            <p className="text-xs text-slate-400">Di semua cabang</p>
           </CardContent>
-        </Card>
-        <Card>
+        </GlassCard>
+        <GlassCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Transfer Tertunda</CardTitle>
-            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-200">Transfer Tertunda</CardTitle>
+            <ArrowRightLeft className="h-4 w-4 text-slate-300" />
           </CardHeader>
           <CardContent>
             {renderStat(stats.pendingTransfers)}
-            <p className="text-xs text-muted-foreground">Menunggu persetujuan</p>
+            <p className="text-xs text-slate-400">Menunggu persetujuan</p>
           </CardContent>
-        </Card>
-        <Card>
+        </GlassCard>
+        <GlassCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Peringatan Stok Rendah</CardTitle>
-            <Bell className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-200">Peringatan Stok Rendah</CardTitle>
+            <Bell className="h-4 w-4 text-slate-300" />
           </CardHeader>
           <CardContent>
             {renderStat(stats.lowStockAlerts)}
-            <p className="text-xs text-muted-foreground">Item perlu diisi ulang</p>
+            <p className="text-xs text-slate-400">Item perlu diisi ulang</p>
           </CardContent>
-        </Card>
+        </GlassCard>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <GlassCard>
           <CardHeader>
             <CardTitle>Aktivitas Terbaru</CardTitle>
-            <CardDescription>5 transfer inventaris terakhir.</CardDescription>
+            <CardDescription className="text-slate-300">5 transfer inventaris terakhir.</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-4">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full bg-white/20" />
+                <Skeleton className="h-8 w-full bg-white/20" />
+                <Skeleton className="h-8 w-full bg-white/20" />
               </div>
             ) : recentTransfers.length > 0 ? (
               <div className="space-y-4">
                 {recentTransfers.map((t) => (
                   <div key={t.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="p-2 bg-muted rounded-full">
+                      <div className="p-2 bg-white/10 rounded-full">
                         <ArrowRightLeft className="h-5 w-5" />
                       </div>
                       <div>
                         <p className="font-medium">{t.itemName} ({t.quantity})</p>
-                        <p className="text-sm text-muted-foreground">{t.fromBranchName} → {t.toBranchName}</p>
+                        <p className="text-sm text-slate-300">{t.fromBranchName} → {t.toBranchName}</p>
                       </div>
                     </div>
                     <Badge variant={t.status === "completed" ? "default" : t.status === "rejected" ? "destructive" : "secondary"}>
@@ -250,18 +250,18 @@ const Index = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">Tidak ada transfer terbaru ditemukan.</p>
+              <p className="text-sm text-slate-400 text-center py-4">Tidak ada transfer terbaru ditemukan.</p>
             )}
           </CardContent>
-        </Card>
+        </GlassCard>
 
-        <Card>
+        <GlassCard>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Item Stok Rendah</CardTitle>
-              <CardDescription>Item dengan kuantitas kurang dari 10.</CardDescription>
+              <CardDescription className="text-slate-300">Item dengan kuantitas kurang dari 10.</CardDescription>
             </div>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="bg-transparent border-white/20 hover:bg-white/10">
               <Link to="/inventory">
                 Lihat Semua
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -271,37 +271,38 @@ const Index = () => {
           <CardContent>
             {loading ? (
               <div className="space-y-2">
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-full bg-white/20" />
+                <Skeleton className="h-6 w-full bg-white/20" />
+                <Skeleton className="h-6 w-full bg-white/20" />
               </div>
             ) : lowStockItems.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Cabang</TableHead>
-                    <TableHead className="text-right">Kuantitas</TableHead>
+                  <TableRow className="border-white/20">
+                    <TableHead className="text-slate-200">Item</TableHead>
+                    <TableHead className="text-slate-200">Cabang</TableHead>
+                    <TableHead className="text-right text-slate-200">Kuantitas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lowStockItems.map((item) => (
-                    <TableRow key={item.id}>
+                    <TableRow key={item.id} className="border-white/20">
                       <TableCell className="font-medium">{item.itemName}</TableCell>
-                      <TableCell>{item.branchName}</TableCell>
-                      <TableCell className="text-right font-bold text-destructive">{item.quantity}</TableCell>
+                      <TableCell className="text-slate-300">{item.branchName}</TableCell>
+                      <TableCell className="text-right font-bold text-red-400">{item.quantity}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">Tidak ada item stok rendah. Kerja bagus!</p>
+              <p className="text-sm text-slate-400 text-center py-4">Tidak ada item stok rendah. Kerja bagus!</p>
             )}
           </CardContent>
-        </Card>
+        </GlassCard>
 
-        {/* Komponen grafik baru */}
-        <BranchInventoryChart data={branchInventoryChartData} loading={loading} />
+        <div className="lg:col-span-1 xl:col-span-2">
+          <BranchInventoryChart data={branchInventoryChartData} loading={loading} />
+        </div>
       </div>
     </div>
   );
