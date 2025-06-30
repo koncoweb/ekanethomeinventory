@@ -11,6 +11,7 @@ service cloud.firestore {
 
     // Fungsi untuk mendapatkan data pengguna dari koleksi 'users'.
     function getUserData() {
+      // Baca dokumen pengguna yang sedang login. Aturan di bawah harus mengizinkan ini.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
@@ -37,10 +38,16 @@ service cloud.firestore {
     // --- Collection Rules ---
 
     // Aturan untuk Koleksi Pengguna (Users)
-    // Admin bisa mengelola semua pengguna. Pengguna hanya bisa membaca data mereka sendiri.
     match /users/{userId} {
-      allow read: if isAdmin() || request.auth.uid == userId;
-      allow write: if isAdmin(); // Hanya admin yang bisa membuat/mengubah/menghapus pengguna (misal: mengubah peran)
+      // Izinkan pengguna yang diautentikasi untuk membaca dokumen pengguna mereka sendiri.
+      // Ini penting agar getUserData() dapat berfungsi.
+      allow read: if request.auth.uid == userId;
+      
+      // Izinkan admin untuk membaca (list) semua dokumen pengguna.
+      allow list: if isAdmin();
+      
+      // Izinkan admin untuk membuat/mengubah/menghapus dokumen pengguna apa pun.
+      allow write: if isAdmin();
     }
 
     // 1. Aturan untuk Manajemen Cabang (Branches)
@@ -77,7 +84,7 @@ service cloud.firestore {
     match /transfers/{transferId} {
       allow read: if isAdmin() || (isManager() && (isManagerOfBranch(resource.data.fromBranchId) || isManagerOfBranch(resource.data.toBranchId)));
       allow create: if isAdmin() || isManagerOfBranch(request.resource.data.fromBranchId);
-      allow update: if isAdmin() || isManagerOfBranch(request.resource.data.toBranchId); // Manajer tujuan yang menyetujui
+      allow update: if isAdmin() || isManagerOfBranch(resource.data.toBranchId); // Manajer tujuan yang menyetujui
       allow delete: if isAdmin();
     }
   }
