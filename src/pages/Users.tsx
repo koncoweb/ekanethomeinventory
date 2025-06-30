@@ -95,23 +95,23 @@ const Users = () => {
   };
 
   return (
-    <Card>
+    <Card className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>User Management</CardTitle>
-            <CardDescription>Manage user accounts and permissions.</CardDescription>
+            <CardTitle>Manajemen Pengguna</CardTitle>
+            <CardDescription className="text-slate-300">Kelola akun pengguna dan izin.</CardDescription>
           </div>
           {isAdmin && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button>Add User</Button>
+                <Button className="bg-indigo-600 hover:bg-indigo-500 text-white">Tambah Pengguna</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                 <DialogHeader>
-                  <DialogTitle className="text-white">Add New User</DialogTitle>
+                  <DialogTitle className="text-white">Tambah Pengguna Baru</DialogTitle>
                   <DialogDescription className="text-slate-300">
-                    Create a new user account and assign a role.
+                    Buat akun pengguna baru dan tetapkan peran.
                   </DialogDescription>
                 </DialogHeader>
                 <AddUserForm setDialogOpen={setIsAddDialogOpen} branches={branches} />
@@ -123,11 +123,11 @@ const Users = () => {
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Assigned Branch</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="hover:bg-white/10">
+              <TableHead className="text-slate-200">Email</TableHead>
+              <TableHead className="text-slate-200">Peran</TableHead>
+              <TableHead className="text-slate-200">Cabang Ditugaskan</TableHead>
+              <TableHead className="text-slate-200 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -142,20 +142,21 @@ const Users = () => {
               ))
             ) : processedUsers.length > 0 ? (
               processedUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.email}</TableCell>
-                  <TableCell>
+                <TableRow key={user.id} className="hover:bg-white/10">
+                  <TableCell className="font-medium text-white">{user.email}</TableCell>
+                  <TableCell className="text-slate-200">
                     <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </Badge>
                   </TableCell>
-                  <TableCell>{user.branchName}</TableCell>
+                  <TableCell className="text-slate-200">{user.branchName}</TableCell>
                   <TableCell className="text-right">
                     {isAdmin && (
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEditClick(user)}
+                        className="text-slate-400 hover:text-white"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -165,8 +166,8 @@ const Users = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  No users found.
+                <TableCell colSpan={4} className="text-center text-slate-300">
+                  Tidak ada pengguna ditemukan.
                 </TableCell>
               </TableRow>
             )}
@@ -178,9 +179,9 @@ const Users = () => {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
             <DialogHeader>
-              <DialogTitle className="text-white">Edit User</DialogTitle>
+              <DialogTitle className="text-white">Edit Pengguna</DialogTitle>
               <DialogDescription className="text-slate-300">
-                Update the role and branch for this user.
+                Perbarui peran dan cabang untuk pengguna ini.
               </DialogDescription>
             </DialogHeader>
             <EditUserForm

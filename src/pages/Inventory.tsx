@@ -109,20 +109,20 @@ const Inventory = () => {
 
   return (
     <>
-      <Card>
+      <Card className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
         <CardHeader>
-          <CardTitle>Inventory Management</CardTitle>
-          <CardDescription>View and manage stock levels across branches.</CardDescription>
+          <CardTitle>Manajemen Inventaris</CardTitle>
+          <CardDescription className="text-slate-300">Lihat dan kelola tingkat stok di seluruh cabang.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Branch</TableHead>
-                <TableHead>Item Name</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead className="text-center">Quantity</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="hover:bg-white/10">
+                <TableHead className="text-slate-200">Cabang</TableHead>
+                <TableHead className="text-slate-200">Nama Barang</TableHead>
+                <TableHead className="text-slate-200">SKU</TableHead>
+                <TableHead className="text-slate-200 text-center">Jumlah</TableHead>
+                <TableHead className="text-slate-200 text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -138,14 +138,14 @@ const Inventory = () => {
                 ))
               ) : processedInventory.length > 0 ? (
                 processedInventory.map((inv) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">{inv.branchName}</TableCell>
-                    <TableCell>{inv.itemName}</TableCell>
-                    <TableCell>{inv.itemSku}</TableCell>
-                    <TableCell className="text-center">{inv.quantity}</TableCell>
+                  <TableRow key={inv.id} className="hover:bg-white/10">
+                    <TableCell className="font-medium text-white">{inv.branchName}</TableCell>
+                    <TableCell className="text-slate-200">{inv.itemName}</TableCell>
+                    <TableCell className="text-slate-200">{inv.itemSku}</TableCell>
+                    <TableCell className="text-center text-slate-200">{inv.quantity}</TableCell>
                     <TableCell className="text-right">
                       {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
-                        <Button variant="ghost" size="icon" onClick={() => handleManageStockClick(inv)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleManageStockClick(inv)} className="text-slate-400 hover:text-white">
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
@@ -154,8 +154,8 @@ const Inventory = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
-                    No inventory records found.
+                  <TableCell colSpan={5} className="text-center h-24 text-slate-300">
+                    Tidak ada catatan inventaris ditemukan.
                   </TableCell>
                 </TableRow>
               )}

@@ -79,18 +79,18 @@ const Branches = () => {
   return (
     <Card className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-2xl font-bold">Branches</CardTitle>
-        <CardDescription className="text-slate-300">Manage your company branches.</CardDescription>
+        <CardTitle className="text-2xl font-bold">Cabang</CardTitle>
+        <CardDescription className="text-slate-300">Kelola cabang perusahaan Anda.</CardDescription>
         {role === 'admin' && (
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-indigo-600 hover:bg-indigo-500 text-white">Add New Branch</Button>
+              <Button className="bg-indigo-600 hover:bg-indigo-500 text-white">Tambah Cabang Baru</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
               <DialogHeader>
-                <DialogTitle className="text-white">Add New Branch</DialogTitle>
+                <DialogTitle className="text-white">Tambah Cabang Baru</DialogTitle>
                 <DialogDescription className="text-slate-300">
-                  Fill in the details for the new branch.
+                  Isi detail untuk cabang baru.
                 </DialogDescription>
               </DialogHeader>
               <AddBranchForm setDialogOpen={setIsAddDialogOpen} />
@@ -102,11 +102,11 @@ const Branches = () => {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-white/10">
-              <TableHead className="text-slate-200">Name</TableHead>
-              <TableHead className="text-slate-200">Location</TableHead>
-              <TableHead className="text-slate-200">Address</TableHead>
-              <TableHead className="text-slate-200">Phone</TableHead>
-              {role === 'admin' && <TableHead className="text-slate-200 text-right">Actions</TableHead>}
+              <TableHead className="text-slate-200">Nama</TableHead>
+              <TableHead className="text-slate-200">Lokasi</TableHead>
+              <TableHead className="text-slate-200">Alamat</TableHead>
+              <TableHead className="text-slate-200">Telepon</TableHead>
+              {role === 'admin' && <TableHead className="text-slate-200 text-right">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -129,19 +129,19 @@ const Branches = () => {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">Delete</Button>
+                          <Button variant="destructive" size="sm">Hapus</Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                           <AlertDialogHeader>
-                            <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogTitle className="text-white">Apakah Anda benar-benar yakin?</AlertDialogTitle>
                             <AlertDialogDescription className="text-slate-300">
-                              This action cannot be undone. This will permanently delete the branch
-                              and remove its data from our servers.
+                              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus cabang secara permanen
+                              dan menghapus datanya dari server kami.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteBranch(branch.id)} className="bg-red-600 hover:bg-red-500 text-white">Continue</AlertDialogAction>
+                            <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteBranch(branch.id)} className="bg-red-600 hover:bg-red-500 text-white">Lanjutkan</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -157,9 +157,9 @@ const Branches = () => {
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
               <DialogHeader>
-                <DialogTitle className="text-white">Edit Branch</DialogTitle>
+                <DialogTitle className="text-white">Edit Cabang</DialogTitle>
                 <DialogDescription className="text-slate-300">
-                  Update the details for this branch.
+                  Perbarui detail untuk cabang ini.
                 </DialogDescription>
               </DialogHeader>
               <EditBranchForm setDialogOpen={setIsEditDialogOpen} branch={selectedBranch} />

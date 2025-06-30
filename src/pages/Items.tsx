@@ -109,29 +109,29 @@ const Items = () => {
   };
 
   return (
-    <Card>
+    <Card className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Item Master Management</CardTitle>
-            <CardDescription>
-              Manage your master inventory items here.
+            <CardTitle>Manajemen Master Barang</CardTitle>
+            <CardDescription className="text-slate-300">
+              Kelola master barang inventaris Anda di sini.
             </CardDescription>
           </div>
           {isAdmin && (
-            <Button onClick={() => setIsAddFormOpen(true)}>Add Item</Button>
+            <Button onClick={() => setIsAddFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white">Tambah Barang</Button>
           )}
         </div>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Item Name</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Unit</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="hover:bg-white/10">
+              <TableHead className="text-slate-200">Nama Barang</TableHead>
+              <TableHead className="text-slate-200">SKU</TableHead>
+              <TableHead className="text-slate-200">Kategori</TableHead>
+              <TableHead className="text-slate-200">Satuan</TableHead>
+              <TableHead className="text-slate-200 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -147,18 +147,18 @@ const Items = () => {
               ))
             ) : items.length > 0 ? (
               items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{item.sku}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>{item.unit}</TableCell>
+                <TableRow key={item.id} className="hover:bg-white/10">
+                  <TableCell className="font-medium text-white">{item.name}</TableCell>
+                  <TableCell className="text-slate-200">{item.sku}</TableCell>
+                  <TableCell className="text-slate-200">{item.category}</TableCell>
+                  <TableCell className="text-slate-200">{item.unit}</TableCell>
                   <TableCell className="text-right">
                     {isAdmin && (
                       <div className="flex justify-end items-center space-x-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)} className="text-slate-400 hover:text-white">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(item.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(item.id)} className="text-slate-400 hover:text-white">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -168,8 +168,8 @@ const Items = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  No items found. Add one to get started.
+                <TableCell colSpan={5} className="text-center text-slate-300">
+                  Tidak ada barang ditemukan. Tambahkan untuk memulai.
                 </TableCell>
               </TableRow>
             )}
@@ -194,15 +194,15 @@ const Items = () => {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">Apakah Anda benar-benar yakin?</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-300">
-              This action cannot be undone. This will permanently delete the item
-              from your inventory.
+              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus item secara permanen
+              dari inventaris Anda.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteItem} className="bg-red-600 hover:bg-red-500 text-white">Continue</AlertDialogAction>
+            <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteItem} className="bg-red-600 hover:bg-red-500 text-white">Lanjutkan</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
