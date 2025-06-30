@@ -32,10 +32,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger, // Ini yang ditambahkan
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import { NewTransferForm } from "@/components/NewTransferForm";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,6 +55,8 @@ export interface Transfer {
   totalValue: number; // Menambahkan totalValue
 }
 
+const ITEMS_PER_PAGE = 10; // Jumlah item per halaman
+
 const Transfers = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -65,6 +67,12 @@ const Transfers = () => {
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const { role, user } = useAuth();
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
+
+  // State untuk paginasi
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [firstVisible, setFirstVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Transfer Management";
@@ -89,14 +97,45 @@ const Transfers = () => {
     };
 
     fetchInitialData();
+  }, [user, role]);
 
-    const unsubscribe = onSnapshot(collection(db, "transfers"), (snapshot) => {
+  useEffect(() => {
+    setLoading(true);
+    let transfersQuery = query(
+      collection(db, "transfers"),
+      orderBy("createdAt", "desc"),
+      limit(ITEMS_PER_PAGE)
+    );
+
+    if (currentPage > 1 && lastVisible) {
+      transfersQuery = query(
+        collection(db, "transfers"),
+        orderBy("createdAt", "desc"),
+        startAfter(lastVisible),
+        limit(ITEMS_PER_PAGE)
+      );
+    } else if (currentPage === 1) {
+      // Reset lastVisible if going back to first page
+      setLastVisible(null);
+    }
+
+    const unsubscribe = onSnapshot(transfersQuery, (snapshot) => {
       const transfersData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as Transfer[];
       setTransfers(transfersData);
       setLoading(false);
+
+      if (snapshot.docs.length > 0) {
+        setFirstVisible(snapshot.docs[0]);
+        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === ITEMS_PER_PAGE);
+      } else {
+        setFirstVisible(null);
+        setLastVisible(null);
+        setHasMore(false);
+      }
     }, (error) => {
       console.error("Error fetching transfers: ", error);
       toast.error("Failed to fetch transfers data.");
@@ -104,7 +143,7 @@ const Transfers = () => {
     });
 
     return () => unsubscribe();
-  }, [user, role]);
+  }, [currentPage, lastVisible]); // lastVisible sebagai dependency untuk memicu fetch halaman berikutnya
 
   const processedTransfers = useMemo(() => {
     const branchesMap = new Map(branches.map(branch => [branch.id, branch.name]));
@@ -190,6 +229,22 @@ const Transfers = () => {
     return false;
   };
 
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+      // Untuk kembali ke halaman sebelumnya, kita perlu query ulang dari awal
+      // atau menyimpan daftar lastVisible dari setiap halaman.
+      // Untuk kesederhanaan, kita akan reset lastVisible dan biarkan useEffect memicu ulang.
+      setLastVisible(null); 
+    }
+  };
+
   return (
     <>
       <Card>
@@ -230,7 +285,7 @@ const Transfers = () => {
             </TableHeader>
             <TableBody>
               {loading ? (
-                Array.from({ length: 5 }).map((_, index) => (
+                Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -323,6 +378,25 @@ const Transfers = () => {
               )}
             </TableBody>
           </Table>
+          <div className="flex justify-between items-center mt-4">
+            <Button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1 || loading}
+              variant="outline"
+              className="bg-transparent border-white/20 text-white hover:bg-white/10"
+            >
+              Previous
+            </Button>
+            <span className="text-white">Page {currentPage}</span>
+            <Button
+              onClick={handleNextPage}
+              disabled={!hasMore || loading}
+              variant="outline"
+              className="bg-transparent border-white/20 text-white hover:bg-white/10"
+            >
+              Next
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </>
