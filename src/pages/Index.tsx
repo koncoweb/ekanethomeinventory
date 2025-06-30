@@ -15,20 +15,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2, Package, ArrowRightLeft, Bell, ArrowRight } from "lucide-react";
+import { Building2, Package, ArrowRightLeft, Bell, ArrowRight, Info } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, orderBy, limit, getCountFromServer } from "firebase/firestore";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { Item } from "./Items";
-import { Branch } from "./Branches";
 import { Transfer } from "./Transfers";
 import { InventoryDoc } from "./Inventory";
 import { Button } from "@/components/ui/button";
-import BranchInventoryChart from "@/components/BranchInventoryChart";
 import { useData } from "@/contexts/DataContext";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DashboardStats {
   totalBranches: number;
@@ -48,11 +46,6 @@ interface ProcessedLowStockItem extends InventoryDoc {
   branchName: string;
 }
 
-interface BranchInventoryData {
-  name: string;
-  totalQuantity: number;
-}
-
 const Index = () => {
   const { user } = useAuth();
   const { branchesMap, itemsMap, loading: dataLoading } = useData();
@@ -64,7 +57,6 @@ const Index = () => {
   });
   const [recentTransfers, setRecentTransfers] = useState<ProcessedTransfer[]>([]);
   const [lowStockItems, setLowStockItems] = useState<ProcessedLowStockItem[]>([]);
-  const [branchInventoryChartData, setBranchInventoryChartData] = useState<BranchInventoryData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -84,22 +76,19 @@ const Index = () => {
 
         // Queries that need full document data
         const recentTransfersQuery = getDocs(query(collection(db, "transfers"), orderBy("createdAt", "desc"), limit(5)));
-        const allInventoryQuery = getDocs(collection(db, "inventory"));
-
+        
         const [
           branchesCountSnap,
           itemsCountSnap,
           pendingTransfersCountSnap,
           lowStockCountSnap,
           recentTransfersSnapshot,
-          allInventorySnapshot,
         ] = await Promise.all([
           branchesCountQuery,
           itemsCountQuery,
           pendingTransfersCountQuery,
           lowStockCountQuery,
           recentTransfersQuery,
-          allInventoryQuery,
         ]);
 
         setStats({
@@ -134,22 +123,6 @@ const Index = () => {
           };
         });
         setLowStockItems(processedLowStock);
-
-        const inventoryByBranch: { [key: string]: number } = {};
-        allInventorySnapshot.docs.forEach(doc => {
-          const data = doc.data() as InventoryDoc;
-          if (inventoryByBranch[data.branchId]) {
-            inventoryByBranch[data.branchId] += data.quantity;
-          } else {
-            inventoryByBranch[data.branchId] = data.quantity;
-          }
-        });
-
-        const processedBranchInventoryData: BranchInventoryData[] = Object.keys(inventoryByBranch).map(branchId => ({
-          name: branchesMap.get(branchId) || "Unknown Branch",
-          totalQuantity: inventoryByBranch[branchId],
-        }));
-        setBranchInventoryChartData(processedBranchInventoryData);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -307,7 +280,13 @@ const Index = () => {
         </GlassCard>
 
         <div className="lg:col-span-1 xl:col-span-2">
-          <BranchInventoryChart data={branchInventoryChartData} loading={loading || dataLoading} />
+          <Alert variant="default" className="bg-black/20 backdrop-blur-lg border-yellow-400/30 text-white">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Grafik Dinonaktifkan</AlertTitle>
+            <AlertDescription>
+              Grafik distribusi inventaris dinonaktifkan sementara untuk optimasi performa dan penghematan kuota baca.
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     </div>

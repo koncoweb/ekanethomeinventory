@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Card,
   CardHeader,
@@ -16,12 +16,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, getDocs, doc, getDoc, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, getDoc, deleteDoc, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Branch } from "./Branches";
 import { Item } from "./Items";
 import ManageStockForm from "@/components/ManageStockForm";
 import {
@@ -61,6 +60,8 @@ export interface ProcessedInventory extends InventoryDoc {
   supplier?: string;
 }
 
+const ITEMS_PER_PAGE = 15;
+
 const Inventory = () => {
   const [inventory, setInventory] = useState<InventoryDoc[]>([]);
   const { branches, items, loading: dataLoading } = useData();
@@ -72,6 +73,11 @@ const Inventory = () => {
   const [isAddInventoryFormOpen, setIsAddInventoryFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [inventoryToDeleteId, setInventoryToDeleteId] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageCursorsRef = useRef<Array<QueryDocumentSnapshot<DocumentData> | null>>([null]);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Inventory Management";
@@ -85,11 +91,49 @@ const Inventory = () => {
       }
       fetchUserBranch();
     }
+  }, [user, role]);
 
-    const unsubscribe = onSnapshot(collection(db, "inventory"), (snapshot) => {
+  useEffect(() => {
+    if (dataLoading) {
+      setLoading(true);
+      return;
+    }
+
+    setLoading(true);
+    let inventoryQuery = query(
+      collection(db, "inventory"),
+      orderBy("branchId"), // Order by something to ensure consistent pagination
+      orderBy("itemId"),
+      limit(ITEMS_PER_PAGE)
+    );
+
+    const currentCursor = pageCursorsRef.current[currentPage - 1];
+    if (currentCursor) {
+      inventoryQuery = query(
+        collection(db, "inventory"),
+        orderBy("branchId"),
+        orderBy("itemId"),
+        startAfter(currentCursor),
+        limit(ITEMS_PER_PAGE)
+      );
+    }
+
+    const unsubscribe = onSnapshot(inventoryQuery, (snapshot) => {
       const inventoryData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as InventoryDoc[];
       setInventory(inventoryData);
       setLoading(false);
+
+      if (snapshot.docs.length > 0) {
+        const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+        if (pageCursorsRef.current.length <= currentPage) {
+          pageCursorsRef.current.push(lastDoc);
+        } else {
+          pageCursorsRef.current[currentPage] = lastDoc;
+        }
+        setHasMore(snapshot.docs.length === ITEMS_PER_PAGE);
+      } else {
+        setHasMore(false);
+      }
     }, (error) => {
       console.error("Error fetching inventory:", error);
       toast.error("Failed to fetch inventory data.");
@@ -97,7 +141,7 @@ const Inventory = () => {
     });
 
     return () => unsubscribe();
-  }, [user, role]);
+  }, [currentPage, dataLoading]);
 
   const processedInventory: ProcessedInventory[] = useMemo(() => {
     const itemsMap = new Map(items.map(item => [item.id, item]));
@@ -111,8 +155,6 @@ const Inventory = () => {
     return filteredInventory.map(inv => {
       const item = itemsMap.get(inv.itemId);
       const price = item?.price;
-      // The totalValue from Firestore is used directly for display.
-      // This ensures the displayed value is what's stored.
       return {
         ...inv,
         branchName: branchesMap.get(inv.branchId)?.name || "Unknown Branch",
@@ -146,6 +188,14 @@ const Inventory = () => {
       setIsDeleteAlertOpen(false);
       setInventoryToDeleteId(null);
     }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) setCurrentPage(prev => prev + 1);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
   };
 
   return (
@@ -191,7 +241,7 @@ const Inventory = () => {
             </TableHeader>
             <TableBody>
               {loading || dataLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
+                Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-48" /></TableCell>
@@ -242,6 +292,15 @@ const Inventory = () => {
               )}
             </TableBody>
           </Table>
+          <div className="flex justify-between items-center mt-4">
+            <Button onClick={handlePreviousPage} disabled={currentPage === 1 || loading || dataLoading} variant="outline">
+              Previous
+            </Button>
+            <span className="text-sm">Page {currentPage}</span>
+            <Button onClick={handleNextPage} disabled={!hasMore || loading || dataLoading} variant="outline">
+              Next
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
