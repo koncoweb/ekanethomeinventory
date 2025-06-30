@@ -176,22 +176,22 @@ const Transfers = () => {
 
   return (
     <>
-      <Card className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+      <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Manajemen Transfer</CardTitle>
-              <CardDescription className="text-slate-300">Kelola transfer inventaris antar cabang.</CardDescription>
+              <CardTitle>Transfer Management</CardTitle>
+              <CardDescription>Manage inventory transfers between branches.</CardDescription>
             </div>
             <Dialog open={isAddTransferDialogOpen} onOpenChange={setIsAddTransferDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-indigo-600 hover:bg-indigo-500 text-white">Transfer Baru</Button>
+                <Button>New Transfer</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                 <DialogHeader>
-                  <DialogTitle className="text-white">Buat Permintaan Transfer Baru</DialogTitle>
+                  <DialogTitle className="text-white">Create New Transfer Request</DialogTitle>
                   <DialogDescription className="text-slate-300">
-                    Isi detail untuk meminta transfer barang.
+                    Fill in the details to request an item transfer.
                   </DialogDescription>
                 </DialogHeader>
                 <NewTransferForm setDialogOpen={setIsAddTransferDialogOpen} branches={branches} items={items} />
@@ -202,13 +202,13 @@ const Transfers = () => {
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-white/10">
-                <TableHead className="text-slate-200">Dari Cabang</TableHead>
-                <TableHead className="text-slate-200">Ke Cabang</TableHead>
-                <TableHead className="text-slate-200">Barang</TableHead>
-                <TableHead className="text-slate-200 text-center">Jumlah</TableHead>
-                <TableHead className="text-slate-200">Status</TableHead>
-                <TableHead className="text-slate-200 text-right">Aksi</TableHead>
+              <TableRow>
+                <TableHead>From Branch</TableHead>
+                <TableHead>To Branch</TableHead>
+                <TableHead>Item</TableHead>
+                <TableHead className="text-center">Quantity</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -225,11 +225,11 @@ const Transfers = () => {
                 ))
               ) : processedTransfers.length > 0 ? (
                 processedTransfers.map((transfer) => (
-                  <TableRow key={transfer.id} className="hover:bg-white/10">
-                    <TableCell className="text-slate-200">{transfer.fromBranchName}</TableCell>
-                    <TableCell className="text-slate-200">{transfer.toBranchName}</TableCell>
-                    <TableCell className="font-medium text-white">{transfer.itemName}</TableCell>
-                    <TableCell className="text-center text-slate-200">{transfer.quantity}</TableCell>
+                  <TableRow key={transfer.id}>
+                    <TableCell>{transfer.fromBranchName}</TableCell>
+                    <TableCell>{transfer.toBranchName}</TableCell>
+                    <TableCell>{transfer.itemName}</TableCell>
+                    <TableCell className="text-center">{transfer.quantity}</TableCell>
                     <TableCell>
                       <Badge variant={
                         transfer.status === "completed" ? "default" :
@@ -247,22 +247,21 @@ const Transfers = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => { setTransferToProcess(transfer); setActionType("approve"); }}
-                                className="bg-transparent border-white/20 text-white hover:bg-white/10"
                               >
-                                Setujui
+                                Approve
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                               <AlertDialogHeader>
-                                <AlertDialogTitle className="text-white">Setujui Transfer?</AlertDialogTitle>
+                                <AlertDialogTitle className="text-white">Approve Transfer?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-slate-300">
-                                  Tindakan ini akan memindahkan {transfer.quantity} dari {transfer.itemName} dari {transfer.fromBranchName} ke {transfer.toBranchName}.
-                                  Ini tidak dapat dibatalkan.
+                                  This action will move {transfer.quantity} of {transfer.itemName} from {transfer.fromBranchName} to {transfer.toBranchName}.
+                                  This cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Batal</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleProcessTransfer} className="bg-indigo-600 hover:bg-indigo-500 text-white">Setujui</AlertDialogAction>
+                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleProcessTransfer}>Approve</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -273,19 +272,19 @@ const Transfers = () => {
                                 size="sm"
                                 onClick={() => { setTransferToProcess(transfer); setActionType("reject"); }}
                               >
-                                Tolak
+                                Reject
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                               <AlertDialogHeader>
-                                <AlertDialogTitle className="text-white">Tolak Transfer?</AlertDialogTitle>
+                                <AlertDialogTitle className="text-white">Reject Transfer?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-slate-300">
-                                  Tindakan ini akan menolak permintaan transfer. Ini tidak dapat dibatalkan.
+                                  This action will reject the transfer request. This cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Batal</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleProcessTransfer} className="bg-red-600 hover:bg-red-500 text-white">Tolak</AlertDialogAction>
+                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleProcessTransfer} className="bg-red-600 hover:bg-red-500 text-white">Reject</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -296,8 +295,8 @@ const Transfers = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24 text-slate-300">
-                    Tidak ada permintaan transfer ditemukan.
+                  <TableCell colSpan={6} className="text-center h-24">
+                    No transfer requests found.
                   </TableCell>
                 </TableRow>
               )}
