@@ -26,22 +26,23 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import { AddBranchForm } from "@/components/AddBranchForm";
-import { Trash2 } from "lucide-react";
+import { EditBranchForm } from "@/components/EditBranchForm";
+import { Trash2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface Branch {
   id: string;
   name: string;
   location: string;
-  address?: string; // Menambahkan properti address (opsional)
-  phone?: string;   // Menambahkan properti phone (opsional)
-  // Anda bisa menambahkan properti lain di sini jika ada di Firestore,
-  // misalnya: managerId?: string; email?: string;
+  address?: string;
+  phone?: string;
 }
 
 const Branches = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const { role } = useAuth();
   const isAdmin = role === 'admin';
 
@@ -84,6 +85,11 @@ const Branches = () => {
     }
   };
 
+  const handleEditClick = (branch: Branch) => {
+    setEditingBranch(branch);
+    setIsEditDialogOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -95,7 +101,7 @@ const Branches = () => {
             </CardDescription>
           </div>
           {isAdmin && (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button>Add Branch</Button>
               </DialogTrigger>
@@ -103,7 +109,7 @@ const Branches = () => {
                 <DialogHeader>
                   <DialogTitle>Add New Branch</DialogTitle>
                 </DialogHeader>
-                <AddBranchForm setDialogOpen={setIsDialogOpen} />
+                <AddBranchForm setDialogOpen={setIsAddDialogOpen} />
               </DialogContent>
             </Dialog>
           )}
@@ -115,8 +121,8 @@ const Branches = () => {
             <TableRow>
               <TableHead>Branch Name</TableHead>
               <TableHead>Location</TableHead>
-              <TableHead>Address</TableHead> {/* Kolom baru */}
-              <TableHead>Phone</TableHead>   {/* Kolom baru */}
+              <TableHead>Address</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -126,24 +132,33 @@ const Branches = () => {
                 <TableRow key={branch.id}>
                   <TableCell>{branch.name}</TableCell>
                   <TableCell>{branch.location}</TableCell>
-                  <TableCell>{branch.address || '-'}</TableCell> {/* Tampilkan address atau '-' jika kosong */}
-                  <TableCell>{branch.phone || '-'}</TableCell>   {/* Tampilkan phone atau '-' jika kosong */}
+                  <TableCell>{branch.address || '-'}</TableCell>
+                  <TableCell>{branch.phone || '-'}</TableCell>
                   <TableCell className="text-right">
                     {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(branch.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditClick(branch)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(branch.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center"> {/* colSpan disesuaikan */}
+                <TableCell colSpan={5} className="text-center">
                   No branches found. Add one to get started.
                 </TableCell>
               </TableRow>
@@ -151,6 +166,20 @@ const Branches = () => {
           </TableBody>
         </Table>
       </CardContent>
+
+      {editingBranch && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Branch</DialogTitle>
+            </DialogHeader>
+            <EditBranchForm 
+              setDialogOpen={setIsEditDialogOpen} 
+              branch={editingBranch} 
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 };

@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
+import { Branch } from "@/pages/Branches";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Branch name must be at least 2 characters." }),
@@ -22,34 +23,36 @@ const formSchema = z.object({
   phone: z.string().optional(),
 });
 
-interface AddBranchFormProps {
+interface EditBranchFormProps {
   setDialogOpen: (open: boolean) => void;
+  branch: Branch;
 }
 
-export const AddBranchForm = ({ setDialogOpen }: AddBranchFormProps) => {
+export const EditBranchForm = ({ setDialogOpen, branch }: EditBranchFormProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      location: "",
-      address: "",
-      phone: "",
+      name: branch.name,
+      location: branch.location,
+      address: branch.address || "",
+      phone: branch.phone || "",
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await addDoc(collection(db, "branches"), values);
+      const branchRef = doc(db, "branches", branch.id);
+      await updateDoc(branchRef, values);
       toast({
         title: "Success",
-        description: "New branch added successfully.",
+        description: "Branch updated successfully.",
       });
       setDialogOpen(false);
     } catch (error) {
-      console.error("Error adding branch: ", error);
+      console.error("Error updating branch: ", error);
       toast({
         title: "Error",
-        description: "Failed to add new branch.",
+        description: "Failed to update branch.",
         variant: "destructive",
       });
     }
@@ -110,7 +113,7 @@ export const AddBranchForm = ({ setDialogOpen }: AddBranchFormProps) => {
             </FormItem>
           )}
         />
-        <Button type="submit">Add Branch</Button>
+        <Button type="submit">Save Changes</Button>
       </form>
     </Form>
   );
