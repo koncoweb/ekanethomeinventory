@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,10 +15,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth(); // Dapatkan user dan authLoading dari AuthContext
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Login";
-  }, []);
+    // Jika AuthContext sudah selesai memuat dan ada pengguna, arahkan ke dashboard
+    if (!authLoading && user) {
+      navigate("/");
+    }
+  }, [user, authLoading, navigate]); // Tambahkan user, authLoading, dan navigate sebagai dependensi
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +34,7 @@ const Login = () => {
         title: "Masuk Berhasil",
         description: "Selamat datang kembali!",
       });
-      navigate("/");
+      // Hapus navigate("/") di sini. useEffect di atas akan menangani pengalihan.
     } catch (err: any) {
       toast({
         title: "Masuk Gagal",
