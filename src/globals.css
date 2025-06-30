@@ -98,4 +98,13 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ukuran font yang lebih ringkas */
+  html {
+    @apply text-sm; /* Mengatur ukuran font dasar menjadi 14px */
+  }
+
+  h1 { @apply text-2xl font-bold; }
+  h2 { @apply text-xl font-semibold; }
+  h3 { @apply text-lg font-semibold; }
 }
