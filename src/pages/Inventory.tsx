@@ -31,8 +31,8 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogDescription,
-} from "@/components/ui/dialog"; // Pastikan Dialog diimpor
-import AddInventoryForm from "@/components/AddInventoryForm"; // Import komponen baru
+} from "@/components/ui/dialog";
+import AddInventoryForm from "@/components/AddInventoryForm";
 
 export interface InventoryDoc {
   id: string;
@@ -45,6 +45,8 @@ interface ProcessedInventory extends InventoryDoc {
   branchName: string;
   itemName: string;
   itemSku: string;
+  price?: number; // Menambahkan properti price
+  supplier?: string; // Menambahkan properti supplier
 }
 
 const Inventory = () => {
@@ -56,7 +58,7 @@ const Inventory = () => {
   const [selectedInventory, setSelectedInventory] = useState<InventoryDoc | null>(null);
   const { role, user } = useAuth();
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
-  const [isAddInventoryFormOpen, setIsAddInventoryFormOpen] = useState(false); // State baru untuk form tambah inventaris
+  const [isAddInventoryFormOpen, setIsAddInventoryFormOpen] = useState(false);
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Inventory Management";
@@ -109,6 +111,8 @@ const Inventory = () => {
       branchName: branchesMap.get(inv.branchId)?.name || "Unknown Branch",
       itemName: itemsMap.get(inv.itemId)?.name || "Unknown Item",
       itemSku: itemsMap.get(inv.itemId)?.sku || "N/A",
+      price: itemsMap.get(inv.itemId)?.price, // Memetakan harga
+      supplier: itemsMap.get(inv.itemId)?.supplier, // Memetakan supplier
     }));
   }, [inventory, items, branches, role, userBranchId]);
 
@@ -151,6 +155,8 @@ const Inventory = () => {
                 <TableHead>Branch</TableHead>
                 <TableHead>Item Name</TableHead>
                 <TableHead>SKU</TableHead>
+                <TableHead>Price</TableHead> {/* Kolom baru */}
+                <TableHead>Supplier/Toko</TableHead> {/* Kolom baru */}
                 <TableHead className="text-center">Quantity</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -162,6 +168,8 @@ const Inventory = () => {
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell> {/* Skeleton untuk Price */}
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell> {/* Skeleton untuk Supplier/Toko */}
                     <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                   </TableRow>
@@ -172,6 +180,10 @@ const Inventory = () => {
                     <TableCell className="font-medium">{inv.branchName}</TableCell>
                     <TableCell>{inv.itemName}</TableCell>
                     <TableCell>{inv.itemSku}</TableCell>
+                    <TableCell>
+                      {inv.price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.price) : '-'}
+                    </TableCell> {/* Menampilkan harga */}
+                    <TableCell>{inv.supplier || '-'}</TableCell> {/* Menampilkan supplier */}
                     <TableCell className="text-center">{inv.quantity}</TableCell>
                     <TableCell className="text-right">
                       {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
@@ -184,7 +196,7 @@ const Inventory = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
+                  <TableCell colSpan={7} className="text-center h-24"> {/* Mengubah colspan */}
                     No inventory records found.
                   </TableCell>
                 </TableRow>
