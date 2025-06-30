@@ -17,7 +17,8 @@ service cloud.firestore {
 
     // Fungsi untuk memeriksa apakah pengguna memiliki peran tertentu.
     function hasRole(role) {
-      return isAuthenticated() && getUserData().role == role;
+      // Pastikan pengguna diautentikasi dan dokumen pengguna ada sebelum mencoba mengakses 'role'
+      return isAuthenticated() && getUserData() != null && getUserData().role == role;
     }
 
     // Fungsi untuk memeriksa apakah pengguna adalah Admin.
@@ -41,13 +42,14 @@ service cloud.firestore {
     match /users/{userId} {
       // Izinkan pengguna yang diautentikasi untuk membaca dokumen pengguna mereka sendiri.
       // Ini penting agar getUserData() dapat berfungsi.
-      allow read: if request.auth.uid == userId;
+      allow get: if request.auth.uid == userId;
       
       // Izinkan admin untuk membaca (list) semua dokumen pengguna.
       allow list: if isAdmin();
       
       // Izinkan admin untuk membuat/mengubah/menghapus dokumen pengguna apa pun.
-      allow write: if isAdmin();
+      // Pengguna tidak dapat membuat pengguna baru sendiri melalui klien.
+      allow create, update, delete: if isAdmin();
     }
 
     // 1. Aturan untuk Manajemen Cabang (Branches)
@@ -69,11 +71,11 @@ service cloud.firestore {
     // 3. Aturan untuk Manajemen Inventaris (Inventory)
     // Admin bisa mengelola semua inventaris.
     // Manajer hanya bisa mengelola inventaris di cabang mereka sendiri.
-    // Pengguna biasa hanya bisa membaca inventaris di cabang mereka.
+    // Pengguna yang diautentikasi bisa membaca inventaris di cabang mereka.
     match /inventory/{inventoryId} {
       allow read: if isAdmin() || (isAuthenticated() && getUserData().branchId == resource.data.branchId);
       allow create, update: if isAdmin() || isManagerOfBranch(request.resource.data.branchId);
-      allow delete: if isAdmin(); // Biasanya, inventaris tidak dihapus, tapi di-set ke 0. Tapi kita berikan akses ke admin.
+      allow delete: if isAdmin();
     }
 
     // 4. Aturan untuk Transfer Inventaris (Transfers)
@@ -84,7 +86,7 @@ service cloud.firestore {
     match /transfers/{transferId} {
       allow read: if isAdmin() || (isManager() && (isManagerOfBranch(resource.data.fromBranchId) || isManagerOfBranch(resource.data.toBranchId)));
       allow create: if isAdmin() || isManagerOfBranch(request.resource.data.fromBranchId);
-      allow update: if isAdmin() || isManagerOfBranch(resource.data.toBranchId); // Manajer tujuan yang menyetujui
+      allow update: if isAdmin() || isManagerOfBranch(request.resource.data.toBranchId); // Manajer tujuan yang menyetujui
       allow delete: if isAdmin();
     }
   }
