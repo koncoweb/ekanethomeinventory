@@ -72,31 +72,31 @@ const Tutorial = () => {
 
           <h3 className="text-lg font-semibold mt-4 mb-1">4.2. Manajemen Item</h3>
           <p className="text-slate-200">
-            Halaman <Link to="/items" className="text-blue-400 hover:underline">Item</Link> memungkinkan Anda untuk:
+            Halaman <Link to="/items" className="text-blue-400 hover:underline">Item</Link> adalah pusat pengelolaan data master untuk semua produk atau barang yang Anda miliki. Di sini, Anda dapat:
           </p>
           <ul className="list-disc list-inside text-slate-200 mt-2 space-y-1">
-            <li>Menambahkan item baru dengan SKU, kategori, dan unit.</li>
-            <li>Mengedit detail item.</li>
-            <li>Menghapus item (hanya Admin).</li>
+            <li>Menambahkan item baru dengan detail lengkap seperti SKU unik, kategori, dan unit pengukuran.</li>
+            <li>Mengedit detail item yang sudah ada untuk menjaga informasi tetap akurat.</li>
+            <li>Menghapus item (hanya Admin) yang sudah tidak relevan.</li>
           </ul>
 
           <h3 className="text-lg font-semibold mt-4 mb-1">4.3. Manajemen Inventaris</h3>
           <p className="text-slate-200">
-            Di halaman <Link to="/inventory" className="text-blue-400 hover:underline">Inventaris</Link>, Anda dapat:
+            Di halaman <Link to="/inventory" className="text-blue-400 hover:underline">Inventaris</Link>, Anda memiliki kontrol penuh atas stok barang di setiap cabang secara real-time. Anda dapat:
           </p>
           <ul className="list-disc list-inside text-slate-200 mt-2 space-y-1">
-            <li>Melihat stok item di setiap cabang.</li>
-            <li>Mengelola stok (menambah/mengurangi kuantitas) untuk item tertentu di cabang tertentu.</li>
+            <li>Melihat stok item yang tersedia di setiap cabang secara terperinci.</li>
+            <li>Mengelola stok dengan mudah, termasuk menambah atau mengurangi kuantitas untuk item tertentu di cabang tertentu, serta melacak riwayat penambahan stok.</li>
           </ul>
 
           <h3 className="text-lg font-semibold mt-4 mb-1">4.4. Manajemen Transfer</h3>
           <p className="text-slate-200">
-            Halaman <Link to="/transfers" className="text-blue-400 hover:underline">Transfer</Link> digunakan untuk:
+            Halaman <Link to="/transfers" className="text-blue-400 hover:underline">Transfer</Link> memungkinkan Anda untuk mengelola pergerakan barang antar cabang dengan efisien dan tercatat. Ini digunakan untuk:
           </p>
           <ul className="list-disc list-inside text-slate-200 mt-2 space-y-1">
-            <li>Membuat permintaan transfer item dari satu cabang ke cabang lain.</li>
-            <li>Melihat status transfer (pending, completed, rejected).</li>
-            <li>Menyetujui atau menolak permintaan transfer (tergantung peran dan cabang).</li>
+            <li>Membuat permintaan transfer item dari satu cabang ke cabang lain, memastikan ketersediaan barang di lokasi yang tepat.</li>
+            <li>Melihat status setiap transfer (pending, completed, rejected) untuk pemantauan yang jelas.</li>
+            <li>Menyetujui atau menolak permintaan transfer (tergantung peran dan cabang) untuk menjaga kontrol penuh atas pergerakan stok.</li>
           </ul>
 
           <h3 className="text-lg font-semibold mt-4 mb-1">4.5. Manajemen Pengguna (Admin Saja)</h3>

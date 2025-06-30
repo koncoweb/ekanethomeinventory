@@ -5,9 +5,9 @@ Selamat datang di Eka Net Home Inventory System! Aplikasi ini adalah solusi mana
 ## Fitur Utama
 
 *   **Manajemen Cabang:** Tambah, edit, dan hapus informasi cabang perusahaan.
-*   **Manajemen Item:** Kelola daftar master item dengan detail seperti SKU, kategori, dan unit.
-*   **Manajemen Inventaris:** Pantau stok item secara real-time di setiap cabang dan lakukan penyesuaian stok.
-*   **Manajemen Transfer:** Buat, setujui, atau tolak permintaan transfer item antar cabang.
+*   **Manajemen Item:** Kelola daftar master item dengan detail lengkap seperti SKU, kategori, dan unit. Ini adalah fondasi untuk semua pencatatan inventaris Anda.
+*   **Manajemen Inventaris:** Pantau stok item secara real-time di setiap cabang, lakukan penyesuaian stok, dan lacak riwayat penambahan stok untuk visibilitas penuh.
+*   **Manajemen Transfer:** Buat, setujui, atau tolak permintaan transfer item antar cabang dengan proses yang terstruktur, memastikan pergerakan stok yang akurat dan tercatat.
 *   **Manajemen Pengguna:** (Hanya Admin) Kelola akun pengguna dengan peran berbeda (Admin, Manajer) dan penugasan cabang.
 *   **Dasbor Interaktif:** Dapatkan ringkasan cepat tentang status inventaris, transfer tertunda, dan peringatan stok rendah.
 *   **Sistem Peran:** Akses fitur disesuaikan berdasarkan peran pengguna (Admin memiliki akses penuh, Manajer terbatas pada cabang yang ditugaskan).
