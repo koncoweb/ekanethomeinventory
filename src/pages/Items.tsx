@@ -21,6 +21,7 @@ import { toast } from "@/hooks/use-toast";
 import { Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import AddItemForm from "@/components/AddItemForm"; // Import AddItemForm
 
 export interface Item {
   id: string;
@@ -36,6 +37,7 @@ const Items = () => {
   const [loading, setLoading] = useState(true);
   const { role } = useAuth();
   const isAdmin = role === 'admin';
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false); // State for AddItemForm dialog
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "items"), (snapshot) => {
@@ -69,7 +71,7 @@ const Items = () => {
             </CardDescription>
           </div>
           {isAdmin && (
-            <Button>Add Item</Button>
+            <Button onClick={() => setIsAddFormOpen(true)}>Add Item</Button>
           )}
         </div>
       </CardHeader>
@@ -126,6 +128,10 @@ const Items = () => {
           </TableBody>
         </Table>
       </CardContent>
+      <AddItemForm
+        isOpen={isAddFormOpen}
+        onClose={() => setIsAddFormOpen(false)}
+      />
     </Card>
   );
 };
