@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, Package, Warehouse, ArrowRightLeft, LogOut, Home } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 const navLinks = [
   { to: "/", icon: Home, label: "Dashboard" },
