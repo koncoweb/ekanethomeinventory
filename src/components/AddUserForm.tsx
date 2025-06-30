@@ -18,12 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { db, auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { db } from "@/lib/firebase"; // Hapus 'auth' dari import ini
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth"; // Tambahkan 'getAuth'
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { Branch } from "@/pages/Branches";
 import { useState } from "react";
+import { initializeApp, deleteApp } from "firebase/app"; // Import baru
+import { firebaseConfig } from "@/lib/firebase"; // Import baru
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -56,13 +58,18 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
+    // Buat instance aplikasi Firebase sekunder sementara untuk pembuatan pengguna.
+    // Ini mencegah status auth aplikasi utama berubah.
+    const tempAppName = `user-creation-${Date.now()}`;
+    const tempApp = initializeApp(firebaseConfig, tempAppName);
+    const tempAuth = getAuth(tempApp);
+
     try {
-      // IMPORTANT: This is a simplified creation flow.
-      // In a real app, you'd use Firebase Functions to create users
-      // to avoid exposing auth instance manipulation to the client.
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // Buat pengguna dengan instance auth sementara.
+      const userCredential = await createUserWithEmailAndPassword(tempAuth, values.email, values.password);
       const user = userCredential.user;
 
+      // Sekarang, buat dokumen pengguna di Firestore.
       await setDoc(doc(db, "users", user.uid), {
         email: values.email,
         role: values.role,
@@ -73,7 +80,7 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
       setDialogOpen(false);
     } catch (error: any) {
       console.error("Error creating user: ", error);
-      // Map Firebase auth errors to more user-friendly messages
+      // Petakan kesalahan auth Firebase ke pesan yang lebih ramah pengguna
       let errorMessage = "Failed to create user.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email address is already in use.";
@@ -83,6 +90,8 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
+      // Bersihkan dan hapus instance aplikasi sementara.
+      await deleteApp(tempApp);
     }
   };
 
