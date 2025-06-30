@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore"; // serverTimestamp is still imported but not used for purchaseDate in array
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -76,7 +76,7 @@ export const AddInventoryForm = ({ setDialogOpen, branches, items }: AddInventor
         quantity: values.quantity,
         purchasePrice: values.purchasePrice,
         supplier: values.supplier,
-        purchaseDate: serverTimestamp(),
+        purchaseDate: new Date(), // Changed to new Date()
         totalValue: values.quantity * values.purchasePrice,
       };
 

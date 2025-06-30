@@ -1,21 +1,27 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { doc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore"; // serverTimestamp is still imported but not used for purchaseDate in array
 import { db } from "@/lib/firebase";
-import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ProcessedInventory } from "@/pages/Inventory";
 
 const formSchema = z.object({
-  quantity: z.coerce.number().int().positive("Quantity must be a positive number."),
-  purchasePrice: z.coerce.number().min(0, "Price must be non-negative."),
-  supplier: z.string().min(1, "Supplier is required."),
+  quantity: z.coerce.number().int().positive({ message: "Quantity must be a positive integer." }),
+  purchasePrice: z.coerce.number().min(0, { message: "Purchase price must be a non-negative number." }),
+  supplier: z.string().min(1, { message: "Supplier is required." }),
 });
 
 interface AddStockFormProps {
@@ -39,28 +45,17 @@ export const AddStockForm = ({ inventoryItem, onClose }: AddStockFormProps) => {
     setIsSubmitting(true);
     try {
       const inventoryRef = doc(db, "inventory", inventoryItem.id);
-      
-      await runTransaction(db, async (transaction) => {
-        const inventoryDoc = await transaction.get(inventoryRef);
-        
-        const newEntry = {
-          ...values,
-          purchaseDate: serverTimestamp(),
-          totalValue: values.quantity * values.purchasePrice,
-        };
 
-        if (!inventoryDoc.exists()) {
-          // This case should ideally not happen with the new workflow, but as a fallback:
-          transaction.set(inventoryRef, {
-            branchId: inventoryItem.branchId,
-            itemId: inventoryItem.itemId,
-            entries: [newEntry],
-          });
-        } else {
-          const currentEntries = inventoryDoc.data().entries || [];
-          const updatedEntries = [...currentEntries, newEntry];
-          transaction.update(inventoryRef, { entries: updatedEntries });
-        }
+      const newEntry = {
+        quantity: values.quantity,
+        purchasePrice: values.purchasePrice,
+        supplier: values.supplier,
+        purchaseDate: new Date(), // Changed to new Date()
+        totalValue: values.quantity * values.purchasePrice,
+      };
+
+      await updateDoc(inventoryRef, {
+        entries: arrayUnion(newEntry),
       });
 
       toast.success("Stock added successfully.");
@@ -82,7 +77,7 @@ export const AddStockForm = ({ inventoryItem, onClose }: AddStockFormProps) => {
           name="quantity"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-slate-200">Quantity</FormLabel>
+              <FormLabel className="text-slate-200">Quantity to Add</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="Enter quantity" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
               </FormControl>
@@ -116,7 +111,7 @@ export const AddStockForm = ({ inventoryItem, onClose }: AddStockFormProps) => {
             </FormItem>
           )}
         />
-        <div className="flex justify-end space-x-2 pt-4">
+        <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="bg-transparent border-white/20 text-white hover:bg-white/10">
             Cancel
           </Button>
@@ -128,3 +123,5 @@ export const AddStockForm = ({ inventoryItem, onClose }: AddStockFormProps) => {
     </Form>
   );
 };
+
+export default AddStockForm;
