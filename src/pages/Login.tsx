@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast"; // Perubahan di sini
+import { useToast } from "@/components/ui/use-toast"; // Dikembalikan ke path ini
 
 const Login = () => {
   const [email, setEmail] = useState("");
