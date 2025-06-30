@@ -27,19 +27,23 @@ import { collection, onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import { AddBranchForm } from "@/components/AddBranchForm";
 import { Trash2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Branch {
   id: string;
   name: string;
   location: string;
+  address?: string; // Menambahkan properti address (opsional)
+  phone?: string;   // Menambahkan properti phone (opsional)
+  // Anda bisa menambahkan properti lain di sini jika ada di Firestore,
+  // misalnya: managerId?: string; email?: string;
 }
 
 const Branches = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { role } = useAuth(); // Dapatkan peran pengguna dari AuthContext
-  const isAdmin = role === 'admin'; // Cek apakah pengguna adalah admin
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "branches"), (snapshot) => {
@@ -54,7 +58,7 @@ const Branches = () => {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!isAdmin) { // Tambahkan cek peran sebelum menghapus
+    if (!isAdmin) {
       toast({
         title: "Akses Ditolak",
         description: "Anda tidak memiliki izin untuk menghapus cabang.",
@@ -90,7 +94,7 @@ const Branches = () => {
               Here you can manage your company branches.
             </CardDescription>
           </div>
-          {isAdmin && ( // Tampilkan tombol "Add Branch" hanya jika admin
+          {isAdmin && (
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button>Add Branch</Button>
@@ -111,6 +115,8 @@ const Branches = () => {
             <TableRow>
               <TableHead>Branch Name</TableHead>
               <TableHead>Location</TableHead>
+              <TableHead>Address</TableHead> {/* Kolom baru */}
+              <TableHead>Phone</TableHead>   {/* Kolom baru */}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -120,8 +126,10 @@ const Branches = () => {
                 <TableRow key={branch.id}>
                   <TableCell>{branch.name}</TableCell>
                   <TableCell>{branch.location}</TableCell>
+                  <TableCell>{branch.address || '-'}</TableCell> {/* Tampilkan address atau '-' jika kosong */}
+                  <TableCell>{branch.phone || '-'}</TableCell>   {/* Tampilkan phone atau '-' jika kosong */}
                   <TableCell className="text-right">
-                    {isAdmin && ( // Tampilkan tombol hapus hanya jika admin
+                    {isAdmin && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -135,7 +143,7 @@ const Branches = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={5} className="text-center"> {/* colSpan disesuaikan */}
                   No branches found. Add one to get started.
                 </TableCell>
               </TableRow>
