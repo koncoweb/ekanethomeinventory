@@ -272,54 +272,36 @@ const Inventory = () => {
             <TableBody>
               {loading || dataLoading ? (
                 Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                    <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
-                  </TableRow>
+                  <TableRow key={index}><TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-48" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell></TableRow>
                 ))
               ) : processedInventory.length > 0 ? (
                 processedInventory.map((inv) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">{inv.branchName}</TableCell>
-                    <TableCell>{inv.itemName}</TableCell>
-                    <TableCell>{inv.itemSku}</TableCell>
-                    <TableCell className="text-center">{inv.totalQuantity}</TableCell>
-                    <TableCell className="text-right">
-                      {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(inv.averagePrice)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(inv.totalValue)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
-                        <div className="flex justify-end items-center space-x-1">
-                          <Button variant="outline" size="sm" onClick={() => handleAddStockClick(inv)}>
-                            <PlusCircle className="h-4 w-4 mr-1" /> Add
+                  <TableRow key={inv.id}><TableCell className="font-medium">{inv.branchName}</TableCell><TableCell>{inv.itemName}</TableCell><TableCell>{inv.itemSku}</TableCell><TableCell className="text-center">{inv.totalQuantity}</TableCell><TableCell className="text-right">
+                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(inv.averagePrice)}
+                  </TableCell><TableCell className="text-right">
+                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(inv.totalValue)}
+                  </TableCell><TableCell className="text-right">
+                    {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
+                      <div className="flex justify-end items-center space-x-1">
+                        <Button variant="outline" size="sm" onClick={() => handleAddStockClick(inv)}>
+                          <PlusCircle className="h-4 w-4 mr-1" /> Add
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleViewDetailsClick(inv)}>
+                          <Eye className="h-4 w-4 mr-1" /> View
+                        </Button>
+                        {role === 'admin' && (
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(inv.id)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleViewDetailsClick(inv)}>
-                            <Eye className="h-4 w-4 mr-1" /> View
-                          </Button>
-                          {role === 'admin' && (
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(inv.id)}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                        )}
+                      </div>
+                    )}
+                  </TableCell></TableRow>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24">
-                    No inventory records found.
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center h-24">
+                  No inventory records found.
+                </TableCell></TableRow>
               )}
             </TableBody>
           </Table>

@@ -296,122 +296,104 @@ const Transfers = () => {
             <TableBody>
               {loading || dataLoading ? (
                 Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                    <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
-                  </TableRow>
+                  <TableRow key={index}><TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-48" /></TableCell><TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell><TableCell><Skeleton className="h-5 w-20" /></TableCell><TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell></TableRow>
                 ))
               ) : processedTransfers.length > 0 ? (
                 processedTransfers.map((transfer) => (
-                  <TableRow key={transfer.id}>
-                    <TableCell>{transfer.fromBranchName}</TableCell>
-                    <TableCell>{transfer.toBranchName}</TableCell>
-                    <TableCell>{transfer.itemName}</TableCell>
-                    <TableCell className="text-center">{transfer.quantity}</TableCell>
-                    <TableCell className="text-right">
-                      {transfer.totalValue ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(transfer.totalValue) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        transfer.status === "completed" ? "default" :
-                        transfer.status === "rejected" ? "destructive" : "secondary"
-                      }>
-                        {transfer.status.charAt(0).toUpperCase() + transfer.status.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        {transfer.status === "pending" && canProcessTransfer(transfer) && (
-                          <>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => { setTransferToProcess(transfer); setActionType("approve"); }}
-                                >
-                                  Approve
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-white">Approve Transfer?</AlertDialogTitle>
-                                  <AlertDialogDescription className="text-slate-300">
-                                    This action will move {transfer.quantity} of {transfer.itemName} from {transfer.fromBranchName} to {transfer.toBranchName}.
-                                    This cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={handleProcessTransfer}>Approve</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => { setTransferToProcess(transfer); setActionType("reject"); }}
-                                >
-                                  Reject
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-white">Reject Transfer?</AlertDialogTitle>
-                                  <AlertDialogDescription className="text-slate-300">
-                                    This action will reject the transfer request. This cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={handleProcessTransfer} className="bg-red-600 hover:bg-red-500 text-white">Reject</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        )}
-                        {role === 'admin' && (
+                  <TableRow key={transfer.id}><TableCell>{transfer.fromBranchName}</TableCell><TableCell>{transfer.toBranchName}</TableCell><TableCell>{transfer.itemName}</TableCell><TableCell className="text-center">{transfer.quantity}</TableCell><TableCell className="text-right">
+                    {transfer.totalValue ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(transfer.totalValue) : '-'}
+                  </TableCell><TableCell>
+                    <Badge variant={
+                      transfer.status === "completed" ? "default" :
+                      transfer.status === "rejected" ? "destructive" : "secondary"
+                    }>
+                      {transfer.status.charAt(0).toUpperCase() + transfer.status.slice(1)}
+                    </Badge>
+                  </TableCell><TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      {transfer.status === "pending" && canProcessTransfer(transfer) && (
+                        <>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => { setTransferToDeleteId(transfer.id); setIsDeleteAlertOpen(true); }}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => { setTransferToProcess(transfer); setActionType("approve"); }}
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" />
+                                Approve
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                               <AlertDialogHeader>
-                                <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogTitle className="text-white">Approve Transfer?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-slate-300">
-                                  This action cannot be undone. This will permanently delete this transfer record.
+                                  This action will move {transfer.quantity} of {transfer.itemName} from {transfer.fromBranchName} to {transfer.toBranchName}.
+                                  This cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToDeleteId(null); setIsDeleteAlertOpen(false); }}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDeleteTransfer} className="bg-red-600 hover:bg-red-500 text-white">Delete</AlertDialogAction>
+                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleProcessTransfer}>Approve</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => { setTransferToProcess(transfer); setActionType("reject"); }}
+                              >
+                                Reject
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-white">Reject Transfer?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-slate-300">
+                                  This action will reject the transfer request. This cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleProcessTransfer} className="bg-red-600 hover:bg-red-500 text-white">Reject</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
+                      {role === 'admin' && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => { setTransferToDeleteId(transfer.id); setIsDeleteAlertOpen(true); }}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-slate-300">
+                                This action cannot be undone. This will permanently delete this transfer record.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToDeleteId(null); setIsDeleteAlertOpen(false); }}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteTransfer} className="bg-red-600 hover:bg-red-500 text-white">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </TableCell></TableRow>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24">
-                    No transfer requests found.
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center h-24">
+                  No transfer requests found.
+                </TableCell></TableRow>
               )}
             </TableBody>
           </Table>

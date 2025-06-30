@@ -137,41 +137,27 @@ const Items = () => {
           <TableBody>
             {loading ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                  <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
-                </TableRow>
+                <TableRow key={index}><TableCell><Skeleton className="h-5 w-48" /></TableCell><TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-5 w-16" /></TableCell><TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell></TableRow>
               ))
             ) : items.length > 0 ? (
               items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{item.sku}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>{item.unit}</TableCell>
-                  <TableCell className="text-right">
-                    {isAdmin && (
-                      <div className="flex justify-end items-center space-x-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(item.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
+                <TableRow key={item.id}><TableCell className="font-medium">{item.name}</TableCell><TableCell>{item.sku}</TableCell><TableCell>{item.category}</TableCell><TableCell>{item.unit}</TableCell><TableCell className="text-right">
+                  {isAdmin && (
+                    <div className="flex justify-end items-center space-x-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(item.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </TableCell></TableRow>
               ))
             ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  No items found. Add one to get started.
-                </TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center">
+                No items found. Add one to get started.
+              </TableCell></TableRow>
             )}
           </TableBody>
         </Table>
