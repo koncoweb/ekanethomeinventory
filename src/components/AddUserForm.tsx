@@ -10,6 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -17,14 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { db } from "@/lib/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
-import { UserData } from "@/pages/Users";
 import { Branch } from "@/pages/Branches";
 import { useState } from "react";
 
 const formSchema = z.object({
+  email: z.string().email({ message: "Invalid email address." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["admin", "manager"], { required_error: "Please select a role." }),
   branchId: z.string().optional(),
 }).refine(data => data.role !== 'manager' || (data.role === 'manager' && !!data.branchId), {
@@ -32,19 +35,20 @@ const formSchema = z.object({
   path: ["branchId"],
 });
 
-interface EditUserFormProps {
+interface AddUserFormProps {
   setDialogOpen: (open: boolean) => void;
-  user: UserData;
   branches: Branch[];
 }
 
-export const EditUserForm = ({ setDialogOpen, user, branches }: EditUserFormProps) => {
+export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      role: user.role,
-      branchId: user.branchId || "",
+      email: "",
+      password: "",
+      role: "manager",
+      branchId: "",
     },
   });
 
@@ -53,16 +57,30 @@ export const EditUserForm = ({ setDialogOpen, user, branches }: EditUserFormProp
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      const userRef = doc(db, "users", user.id);
-      await updateDoc(userRef, {
+      // IMPORTANT: This is a simplified creation flow.
+      // In a real app, you'd use Firebase Functions to create users
+      // to avoid exposing auth instance manipulation to the client.
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      await setDoc(doc(db, "users", user.uid), {
+        email: values.email,
         role: values.role,
         branchId: values.role === 'manager' ? values.branchId : null,
       });
-      toast.success("User updated successfully.");
+
+      toast.success("User created successfully.");
       setDialogOpen(false);
-    } catch (error) {
-      console.error("Error updating user: ", error);
-      toast.error("Failed to update user.");
+    } catch (error: any) {
+      console.error("Error creating user: ", error);
+      // Map Firebase auth errors to more user-friendly messages
+      let errorMessage = "Failed to create user.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email address is already in use.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "The password is too weak.";
+      }
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -71,7 +89,28 @@ export const EditUserForm = ({ setDialogOpen, user, branches }: EditUserFormProp
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <p className="text-sm font-medium">Editing user: <span className="font-normal text-muted-foreground">{user.email}</span></p>
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl><Input type="email" placeholder="user@example.com" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl><Input type="password" placeholder="••••••" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="role"
@@ -109,7 +148,7 @@ export const EditUserForm = ({ setDialogOpen, user, branches }: EditUserFormProp
             )}
           />
         )}
-        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Changes"}</Button>
+        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Creating..." : "Create User"}</Button>
       </form>
     </Form>
   );
