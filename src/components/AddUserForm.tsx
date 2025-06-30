@@ -58,18 +58,14 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
-    // Buat instance aplikasi Firebase sekunder sementara untuk pembuatan pengguna.
-    // Ini mencegah status auth aplikasi utama berubah.
     const tempAppName = `user-creation-${Date.now()}`;
     const tempApp = initializeApp(firebaseConfig, tempAppName);
     const tempAuth = getAuth(tempApp);
 
     try {
-      // Buat pengguna dengan instance auth sementara.
       const userCredential = await createUserWithEmailAndPassword(tempAuth, values.email, values.password);
       const user = userCredential.user;
 
-      // Sekarang, buat dokumen pengguna di Firestore.
       await setDoc(doc(db, "users", user.uid), {
         email: values.email,
         role: values.role,
@@ -80,7 +76,6 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
       setDialogOpen(false);
     } catch (error: any) {
       console.error("Error creating user: ", error);
-      // Petakan kesalahan auth Firebase ke pesan yang lebih ramah pengguna
       let errorMessage = "Failed to create user.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email address is already in use.";
@@ -90,21 +85,20 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
-      // Bersihkan dan hapus instance aplikasi sementara.
       await deleteApp(tempApp);
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl><Input type="email" placeholder="user@example.com" {...field} /></FormControl>
+              <FormLabel className="text-slate-200">Email</FormLabel>
+              <FormControl><Input type="email" placeholder="user@example.com" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -114,8 +108,8 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl><Input type="password" placeholder="••••••" {...field} /></FormControl>
+              <FormLabel className="text-slate-200">Password</FormLabel>
+              <FormControl><Input type="password" placeholder="••••••" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -125,12 +119,12 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
           name="role"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Role</FormLabel>
+              <FormLabel className="text-slate-200">Role</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
+                <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
+                <SelectContent className="bg-black border-white/20 text-white">
+                  <SelectItem value="admin" className="hover:bg-white/10 focus:bg-white/10">Admin</SelectItem>
+                  <SelectItem value="manager" className="hover:bg-white/10 focus:bg-white/10">Manager</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -143,12 +137,12 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
             name="branchId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Branch</FormLabel>
+                <FormLabel className="text-slate-200">Branch</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select a branch" /></SelectTrigger></FormControl>
-                  <SelectContent>
+                  <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select a branch" /></SelectTrigger></FormControl>
+                  <SelectContent className="bg-black border-white/20 text-white">
                     {branches.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                      <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10">{branch.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -157,7 +151,7 @@ export const AddUserForm = ({ setDialogOpen, branches }: AddUserFormProps) => {
             )}
           />
         )}
-        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Creating..." : "Create User"}</Button>
+        <Button type="submit" disabled={isSubmitting} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white">{isSubmitting ? "Creating..." : "Create User"}</Button>
       </form>
     </Form>
   );

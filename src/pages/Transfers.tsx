@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -133,12 +134,10 @@ const Transfers = () => {
             throw new Error("Insufficient stock at source branch.");
           }
 
-          // Decrement from source
           transaction.update(fromInventoryRef, {
             quantity: fromInventorySnap.data().quantity - transferToProcess.quantity,
           });
 
-          // Increment to destination or create if not exists
           if (toInventorySnap.exists()) {
             transaction.update(toInventoryRef, {
               quantity: toInventorySnap.data().quantity + transferToProcess.quantity,
@@ -151,7 +150,6 @@ const Transfers = () => {
             });
           }
 
-          // Update transfer status
           transaction.update(transferRef, { status: "completed" });
         });
         toast.success("Transfer approved and inventory updated.");
@@ -189,9 +187,12 @@ const Transfers = () => {
               <DialogTrigger asChild>
                 <Button>New Transfer</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                 <DialogHeader>
-                  <DialogTitle>Create New Transfer Request</DialogTitle>
+                  <DialogTitle className="text-white">Create New Transfer Request</DialogTitle>
+                  <DialogDescription className="text-slate-300">
+                    Fill in the details to request an item transfer.
+                  </DialogDescription>
                 </DialogHeader>
                 <NewTransferForm setDialogOpen={setIsAddTransferDialogOpen} branches={branches} items={items} />
               </DialogContent>
@@ -250,16 +251,16 @@ const Transfers = () => {
                                 Approve
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Approve Transfer?</AlertDialogTitle>
-                                <AlertDialogDescription>
+                                <AlertDialogTitle className="text-white">Approve Transfer?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-slate-300">
                                   This action will move {transfer.quantity} of {transfer.itemName} from {transfer.fromBranchName} to {transfer.toBranchName}.
                                   This cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleProcessTransfer}>Approve</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -274,16 +275,16 @@ const Transfers = () => {
                                 Reject
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Reject Transfer?</AlertDialogTitle>
-                                <AlertDialogDescription>
+                                <AlertDialogTitle className="text-white">Reject Transfer?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-slate-300">
                                   This action will reject the transfer request. This cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleProcessTransfer}>Reject</AlertDialogAction>
+                                <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10" onClick={() => { setTransferToProcess(null); setActionType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleProcessTransfer} className="bg-red-600 hover:bg-red-500 text-white">Reject</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>

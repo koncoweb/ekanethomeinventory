@@ -68,18 +68,18 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="fromBranchId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>From Branch</FormLabel>
+              <FormLabel className="text-slate-200">From Branch</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select source branch" /></SelectTrigger></FormControl>
-                <SelectContent>
+                <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select source branch" /></SelectTrigger></FormControl>
+                <SelectContent className="bg-black border-white/20 text-white">
                   {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10">{branch.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -92,12 +92,12 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
           name="toBranchId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>To Branch</FormLabel>
+              <FormLabel className="text-slate-200">To Branch</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select destination branch" /></SelectTrigger></FormControl>
-                <SelectContent>
+                <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select destination branch" /></SelectTrigger></FormControl>
+                <SelectContent className="bg-black border-white/20 text-white">
                   {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10">{branch.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -110,12 +110,12 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
           name="itemId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Item</FormLabel>
+              <FormLabel className="text-slate-200">Item</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select item to transfer" /></SelectTrigger></FormControl>
-                <SelectContent>
+                <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select item to transfer" /></SelectTrigger></FormControl>
+                <SelectContent className="bg-black border-white/20 text-white">
                   {items.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>{item.name} ({item.sku})</SelectItem>
+                    <SelectItem key={item.id} value={item.id} className="hover:bg-white/10 focus:bg-white/10">{item.name} ({item.sku})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -128,13 +128,13 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
           name="quantity"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Quantity</FormLabel>
-              <FormControl><Input type="number" placeholder="Enter quantity" {...field} /></FormControl>
+              <FormLabel className="text-slate-200">Quantity</FormLabel>
+              <FormControl><Input type="number" placeholder="Enter quantity" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" /></FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">Submit Transfer Request</Button>
+        <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white">Submit Transfer Request</Button>
       </form>
     </Form>
   );

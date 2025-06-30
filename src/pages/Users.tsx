@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, getDocs } from "firebase/firestore";
@@ -106,9 +107,12 @@ const Users = () => {
               <DialogTrigger asChild>
                 <Button>Add User</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                 <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogTitle className="text-white">Add New User</DialogTitle>
+                  <DialogDescription className="text-slate-300">
+                    Create a new user account and assign a role.
+                  </DialogDescription>
                 </DialogHeader>
                 <AddUserForm setDialogOpen={setIsAddDialogOpen} branches={branches} />
               </DialogContent>
@@ -172,9 +176,12 @@ const Users = () => {
 
       {editingUser && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
             <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
+              <DialogTitle className="text-white">Edit User</DialogTitle>
+              <DialogDescription className="text-slate-300">
+                Update the role and branch for this user.
+              </DialogDescription>
             </DialogHeader>
             <EditUserForm
               setDialogOpen={setIsEditDialogOpen}

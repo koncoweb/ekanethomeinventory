@@ -70,19 +70,19 @@ export const EditUserForm = ({ setDialogOpen, user, branches }: EditUserFormProp
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <p className="text-sm font-medium">Editing user: <span className="font-normal text-muted-foreground">{user.email}</span></p>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <p className="text-sm font-medium text-slate-200">Editing user: <span className="font-normal text-slate-400">{user.email}</span></p>
         <FormField
           control={form.control}
           name="role"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Role</FormLabel>
+              <FormLabel className="text-slate-200">Role</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
+                <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
+                <SelectContent className="bg-black border-white/20 text-white">
+                  <SelectItem value="admin" className="hover:bg-white/10 focus:bg-white/10">Admin</SelectItem>
+                  <SelectItem value="manager" className="hover:bg-white/10 focus:bg-white/10">Manager</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -95,12 +95,12 @@ export const EditUserForm = ({ setDialogOpen, user, branches }: EditUserFormProp
             name="branchId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Branch</FormLabel>
+                <FormLabel className="text-slate-200">Branch</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select a branch" /></SelectTrigger></FormControl>
-                  <SelectContent>
+                  <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select a branch" /></SelectTrigger></FormControl>
+                  <SelectContent className="bg-black border-white/20 text-white">
                     {branches.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                      <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10">{branch.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -109,7 +109,7 @@ export const EditUserForm = ({ setDialogOpen, user, branches }: EditUserFormProp
             )}
           />
         )}
-        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Changes"}</Button>
+        <Button type="submit" disabled={isSubmitting} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white">{isSubmitting ? "Saving..." : "Save Changes"}</Button>
       </form>
     </Form>
   );
