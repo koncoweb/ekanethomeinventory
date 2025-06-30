@@ -27,6 +27,7 @@ import { Branch } from "./Branches";
 import { Transfer } from "./Transfers";
 import { InventoryDoc } from "./Inventory";
 import { Button } from "@/components/ui/button";
+import BranchInventoryChart from "@/components/BranchInventoryChart"; // Import komponen grafik baru
 
 interface DashboardStats {
   totalBranches: number;
@@ -46,6 +47,11 @@ interface ProcessedLowStockItem extends InventoryDoc {
   branchName: string;
 }
 
+interface BranchInventoryData {
+  name: string;
+  totalQuantity: number;
+}
+
 const Index = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
@@ -56,6 +62,7 @@ const Index = () => {
   });
   const [recentTransfers, setRecentTransfers] = useState<ProcessedTransfer[]>([]);
   const [lowStockItems, setLowStockItems] = useState<ProcessedLowStockItem[]>([]);
+  const [branchInventoryChartData, setBranchInventoryChartData] = useState<BranchInventoryData[]>([]); // State baru untuk data grafik
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,6 +77,7 @@ const Index = () => {
         const pendingTransfersQuery = getDocs(query(collection(db, "transfers"), where("status", "==", "pending")));
         const lowStockQuery = getDocs(query(collection(db, "inventory"), where("quantity", "<", lowStockThreshold)));
         const recentTransfersQuery = getDocs(query(collection(db, "transfers"), orderBy("createdAt", "desc"), limit(5)));
+        const allInventoryQuery = getDocs(collection(db, "inventory")); // Query baru untuk semua inventaris
 
         const [
           branchesSnapshot,
@@ -77,12 +85,14 @@ const Index = () => {
           pendingTransfersSnapshot,
           lowStockSnapshot,
           recentTransfersSnapshot,
+          allInventorySnapshot, // Snapshot baru
         ] = await Promise.all([
           branchesQuery,
           itemsQuery,
           pendingTransfersQuery,
           lowStockQuery,
           recentTransfersQuery,
+          allInventoryQuery, // Tambahkan ke Promise.all
         ]);
 
         // Create maps for easy data lookup
@@ -123,6 +133,23 @@ const Index = () => {
           };
         });
         setLowStockItems(processedLowStock);
+
+        // Process and set branch inventory chart data
+        const inventoryByBranch: { [key: string]: number } = {};
+        allInventorySnapshot.docs.forEach(doc => {
+          const data = doc.data() as InventoryDoc;
+          if (inventoryByBranch[data.branchId]) {
+            inventoryByBranch[data.branchId] += data.quantity;
+          } else {
+            inventoryByBranch[data.branchId] = data.quantity;
+          }
+        });
+
+        const processedBranchInventoryData: BranchInventoryData[] = Object.keys(inventoryByBranch).map(branchId => ({
+          name: branchesMap.get(branchId) || "Unknown Branch",
+          totalQuantity: inventoryByBranch[branchId],
+        }));
+        setBranchInventoryChartData(processedBranchInventoryData);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -272,6 +299,9 @@ const Index = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Komponen grafik baru */}
+        <BranchInventoryChart data={branchInventoryChartData} loading={loading} />
       </div>
     </div>
   );
