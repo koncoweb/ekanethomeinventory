@@ -42,6 +42,7 @@ export interface Item {
   unit: string;
   price?: number;
   description?: string;
+  supplier?: string; // Menambahkan properti supplier
 }
 
 const Items = () => {
@@ -133,6 +134,7 @@ const Items = () => {
               <TableHead>Category</TableHead>
               <TableHead>Unit</TableHead>
               <TableHead>Price</TableHead>
+              <TableHead>Supplier/Toko</TableHead> {/* Menambahkan kolom Supplier/Toko */}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -145,6 +147,7 @@ const Items = () => {
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell> {/* Skeleton untuk kolom baru */}
                   <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                 </TableRow>
               ))
@@ -158,6 +161,7 @@ const Items = () => {
                   <TableCell>
                     {item.price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.price) : '-'}
                   </TableCell>
+                  <TableCell>{item.supplier || '-'}</TableCell> {/* Menampilkan data supplier */}
                   <TableCell className="text-right">
                     {isAdmin && (
                       <div className="flex justify-end items-center space-x-2">
@@ -174,7 +178,7 @@ const Items = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={7} className="text-center"> {/* Mengubah colspan */}
                   No items found. Add one to get started.
                 </TableCell>
               </TableRow>

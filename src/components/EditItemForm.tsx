@@ -51,6 +51,7 @@ const formSchema = z.object({
   }),
   price: z.coerce.number().min(0, { message: "Price must be non-negative." }).optional(),
   description: z.string().optional(),
+  supplier: z.string().optional(), // Menambahkan properti supplier
 });
 
 const categories = [
@@ -84,6 +85,7 @@ const EditItemForm = ({ isOpen, onClose, item }: EditItemFormProps) => {
         unit: item.unit,
         price: item.price || 0,
         description: item.description || "",
+        supplier: item.supplier || "", // Memuat data supplier
       });
     }
   }, [item, form]);
@@ -198,6 +200,19 @@ const EditItemForm = ({ isOpen, onClose, item }: EditItemFormProps) => {
                   <FormLabel className="text-slate-200">Price (Optional)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="e.g., 150000" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="supplier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-slate-200">Supplier/Toko (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., PT. Maju Jaya" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
