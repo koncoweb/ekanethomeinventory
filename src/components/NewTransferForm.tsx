@@ -53,10 +53,20 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      // Find the selected item to get its price
+      const selectedItem = items.find(item => item.id === values.itemId);
+      if (!selectedItem) {
+        toast.error("Selected item not found.");
+        return;
+      }
+      const price = selectedItem.price || 0;
+      const totalValue = values.quantity * price;
+
       await addDoc(collection(db, "transfers"), {
         ...values,
         status: "pending",
         createdAt: serverTimestamp(),
+        totalValue, // Save the calculated total value
       });
       toast.success("Transfer request created successfully.");
       setDialogOpen(false);

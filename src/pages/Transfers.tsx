@@ -32,10 +32,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc, query, where } from "firebase/firestore";
+import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { NewTransferForm } from "@/components/NewTransferForm";
 import { useAuth } from "@/contexts/AuthContext";
@@ -52,6 +51,7 @@ export interface Transfer {
   quantity: number;
   status: "pending" | "completed" | "rejected";
   createdAt: any; // Firebase Timestamp
+  totalValue: number; // Menambahkan totalValue
 }
 
 const Transfers = () => {
@@ -120,41 +120,56 @@ const Transfers = () => {
   const handleProcessTransfer = async () => {
     if (!transferToProcess || !actionType) return;
 
+    const { fromBranchId, toBranchId, itemId, quantity, totalValue, id: transferId } = transferToProcess;
+
     try {
       if (actionType === "approve") {
         await runTransaction(db, async (transaction) => {
-          const fromInventoryRef = doc(db, "inventory", `${transferToProcess.fromBranchId}_${transferToProcess.itemId}`);
-          const toInventoryRef = doc(db, "inventory", `${transferToProcess.toBranchId}_${transferToProcess.itemId}`);
-          const transferRef = doc(db, "transfers", transferToProcess.id);
+          const fromInventoryRef = doc(db, "inventory", `${fromBranchId}_${itemId}`);
+          const toInventoryRef = doc(db, "inventory", `${toBranchId}_${itemId}`);
+          const transferRef = doc(db, "transfers", transferId);
 
           const fromInventorySnap = await transaction.get(fromInventoryRef);
           const toInventorySnap = await transaction.get(toInventoryRef);
 
-          if (!fromInventorySnap.exists() || fromInventorySnap.data().quantity < transferToProcess.quantity) {
+          if (!fromInventorySnap.exists() || fromInventorySnap.data().quantity < quantity) {
             throw new Error("Insufficient stock at source branch.");
           }
 
+          // Decrease source inventory
+          const fromData = fromInventorySnap.data();
+          const newFromQuantity = fromData.quantity - quantity;
+          const newFromTotalValue = (fromData.totalValue || 0) - totalValue;
           transaction.update(fromInventoryRef, {
-            quantity: fromInventorySnap.data().quantity - transferToProcess.quantity,
+            quantity: newFromQuantity,
+            totalValue: newFromTotalValue,
           });
 
+          // Increase destination inventory
           if (toInventorySnap.exists()) {
+            const toData = toInventorySnap.data();
+            const newToQuantity = toData.quantity + quantity;
+            const newToTotalValue = (toData.totalValue || 0) + totalValue;
             transaction.update(toInventoryRef, {
-              quantity: toInventorySnap.data().quantity + transferToProcess.quantity,
+              quantity: newToQuantity,
+              totalValue: newToTotalValue,
             });
           } else {
+            // Create new inventory record for destination
             transaction.set(toInventoryRef, {
-              branchId: transferToProcess.toBranchId,
-              itemId: transferToProcess.itemId,
-              quantity: transferToProcess.quantity,
+              branchId: toBranchId,
+              itemId: itemId,
+              quantity: quantity,
+              totalValue: totalValue,
             });
           }
 
+          // Mark transfer as completed
           transaction.update(transferRef, { status: "completed" });
         });
         toast.success("Transfer approved and inventory updated.");
       } else if (actionType === "reject") {
-        await updateDoc(doc(db, "transfers", transferToProcess.id), { status: "rejected" });
+        await updateDoc(doc(db, "transfers", transferId), { status: "rejected" });
         toast.info("Transfer rejected.");
       }
     } catch (error: any) {
@@ -207,6 +222,7 @@ const Transfers = () => {
                 <TableHead>To Branch</TableHead>
                 <TableHead>Item</TableHead>
                 <TableHead className="text-center">Quantity</TableHead>
+                <TableHead className="text-right">Total Value</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -219,6 +235,7 @@ const Transfers = () => {
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                     <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                   </TableRow>
@@ -230,6 +247,9 @@ const Transfers = () => {
                     <TableCell>{transfer.toBranchName}</TableCell>
                     <TableCell>{transfer.itemName}</TableCell>
                     <TableCell className="text-center">{transfer.quantity}</TableCell>
+                    <TableCell className="text-right">
+                      {transfer.totalValue ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(transfer.totalValue) : '-'}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={
                         transfer.status === "completed" ? "default" :
@@ -295,7 +315,7 @@ const Transfers = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
+                  <TableCell colSpan={7} className="text-center h-24">
                     No transfer requests found.
                   </TableCell>
                 </TableRow>
