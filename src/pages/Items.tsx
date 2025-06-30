@@ -40,6 +40,7 @@ export interface Item {
   sku: string;
   category: string;
   unit: string;
+  price?: number;
   description?: string;
 }
 
@@ -131,6 +132,7 @@ const Items = () => {
               <TableHead>SKU</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Unit</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -142,6 +144,7 @@ const Items = () => {
                   <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                 </TableRow>
               ))
@@ -152,6 +155,9 @@ const Items = () => {
                   <TableCell>{item.sku}</TableCell>
                   <TableCell>{item.category}</TableCell>
                   <TableCell>{item.unit}</TableCell>
+                  <TableCell>
+                    {item.price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.price) : '-'}
+                  </TableCell>
                   <TableCell className="text-right">
                     {isAdmin && (
                       <div className="flex justify-end items-center space-x-2">
@@ -168,7 +174,7 @@ const Items = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={6} className="text-center">
                   No items found. Add one to get started.
                 </TableCell>
               </TableRow>

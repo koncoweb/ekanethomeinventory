@@ -50,6 +50,7 @@ const formSchema = z.object({
   unit: z.string().min(1, {
     message: "Unit is required.",
   }),
+  price: z.coerce.number().min(0, { message: "Price must be non-negative." }).optional(),
   description: z.string().optional(),
 });
 
@@ -78,6 +79,7 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
       sku: "",
       unit: "",
       description: "",
+      price: 0,
     },
   });
 
@@ -197,6 +199,19 @@ const AddItemForm = ({ isOpen, onClose }: AddItemFormProps) => {
                   <FormLabel className="text-slate-200">Unit</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Pcs" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-slate-200">Price (Optional)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="e.g., 150000" {...field} className="bg-black/30 border-white/20 text-white placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
