@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast"; // Dikembalikan ke path ini
+import { useToast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -21,14 +21,14 @@ const Login = () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({
-        title: "Login Successful",
-        description: "Welcome back!",
+        title: "Masuk Berhasil",
+        description: "Selamat datang kembali!",
       });
       navigate("/");
     } catch (err: any) {
       toast({
-        title: "Login Failed",
-        description: "Invalid email or password.",
+        title: "Masuk Gagal",
+        description: "Email atau kata sandi tidak valid.",
         variant: "destructive",
       });
     } finally {
@@ -40,9 +40,9 @@ const Login = () => {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Masuk</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account.
+            Masukkan email Anda di bawah ini untuk masuk ke akun Anda.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,7 +60,7 @@ const Login = () => {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Kata Sandi</Label>
               <Input
                 id="password"
                 type="password"
@@ -71,7 +71,7 @@ const Login = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+              {loading ? "Masuk..." : "Masuk"}
             </Button>
           </form>
         </CardContent>

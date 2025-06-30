@@ -3,19 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Building2, Package, Warehouse, ArrowRightLeft, LogOut, Home, Users } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { useToast } from "@/components/ui/use-toast"; // Dikembalikan ke path ini
+import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navLinks = [
-  { to: "/", icon: Home, label: "Dashboard" },
-  { to: "/branches", icon: Building2, label: "Branches" },
-  { to: "/items", icon: Package, label: "Items" },
-  { to: "/inventory", icon: Warehouse, label: "Inventory" },
-  { to: "/transfers", icon: ArrowRightLeft, label: "Transfers" },
+  { to: "/", icon: Home, label: "Dasbor" },
+  { to: "/branches", icon: Building2, label: "Cabang" },
+  { to: "/items", icon: Package, label: "Item" },
+  { to: "/inventory", icon: Warehouse, label: "Inventaris" },
+  { to: "/transfers", icon: ArrowRightLeft, label: "Transfer" },
 ];
 
 const adminLinks = [
-  { to: "/users", icon: Users, label: "Users" },
+  { to: "/users", icon: Users, label: "Pengguna" },
 ]
 
 const Sidebar = () => {
@@ -27,14 +27,14 @@ const Sidebar = () => {
     try {
       await signOut(auth);
       toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
+        title: "Berhasil Keluar",
+        description: "Anda telah berhasil keluar.",
       });
       navigate("/login");
     } catch (error) {
       toast({
-        title: "Logout Failed",
-        description: "An error occurred during logout.",
+        title: "Gagal Keluar",
+        description: "Terjadi kesalahan saat keluar.",
         variant: "destructive",
       });
     }
@@ -89,7 +89,7 @@ const Sidebar = () => {
       <div className="p-4 mt-auto border-t">
         <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          Keluar
         </Button>
       </div>
     </aside>

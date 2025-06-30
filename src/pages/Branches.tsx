@@ -35,12 +35,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, deleteDoc } from "firebase/firestore";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { AddBranchForm } from "@/components/AddBranchForm";
 import { EditBranchForm } from "@/components/EditBranchForm";
 import { Trash2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
+import { Skeleton } from "@/components/ui/skeleton";
 
 export interface Branch {
   id: string;
@@ -52,12 +52,13 @@ export interface Branch {
 
 const Branches = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [loading, setLoading] = useState(true); // State untuk loading
+  const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [branchToDelete, setBranchToDelete] = useState<string | null>(null);
   const { role } = useAuth();
+  const { toast } = useToast();
   const isAdmin = role === 'admin';
 
   useEffect(() => {
@@ -67,19 +68,19 @@ const Branches = () => {
         ...doc.data(),
       })) as Branch[];
       setBranches(branchesData);
-      setLoading(false); // Set loading ke false setelah data diterima
+      setLoading(false);
     }, (error) => {
       console.error("Error fetching branches: ", error);
       toast({
-        title: "Error",
-        description: "Failed to fetch branches data.",
+        title: "Galat",
+        description: "Gagal mengambil data cabang.",
         variant: "destructive",
       });
-      setLoading(false); // Juga set loading ke false jika ada error
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const handleDeleteConfirm = async () => {
     if (!isAdmin || !branchToDelete) {
@@ -93,15 +94,15 @@ const Branches = () => {
     try {
       await deleteDoc(doc(db, "branches", branchToDelete));
       toast({
-        title: "Success",
-        description: "Branch deleted successfully.",
+        title: "Sukses",
+        description: "Cabang berhasil dihapus.",
       });
       setBranchToDelete(null);
     } catch (error) {
       console.error("Error deleting branch: ", error);
       toast({
-        title: "Error",
-        description: "Failed to delete branch.",
+        title: "Galat",
+        description: "Gagal menghapus cabang.",
         variant: "destructive",
       });
     }
@@ -117,19 +118,19 @@ const Branches = () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Branch Management</CardTitle>
+            <CardTitle>Manajemen Cabang</CardTitle>
             <CardDescription>
-              Here you can manage your company branches.
+              Di sini Anda dapat mengelola cabang perusahaan Anda.
             </CardDescription>
           </div>
           {isAdmin && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button>Add Branch</Button>
+                <Button>Tambah Cabang</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New Branch</DialogTitle>
+                  <DialogTitle>Tambah Cabang Baru</DialogTitle>
                 </DialogHeader>
                 <AddBranchForm setDialogOpen={setIsAddDialogOpen} />
               </DialogContent>
@@ -141,16 +142,15 @@ const Branches = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Branch Name</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Nama Cabang</TableHead>
+              <TableHead>Lokasi</TableHead>
+              <TableHead>Alamat</TableHead>
+              <TableHead>Telepon</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              // Tampilkan skeleton loader saat loading
               Array.from({ length: 3 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -189,15 +189,15 @@ const Branches = () => {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogTitle>Apakah Anda benar-benar yakin?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the branch
-                                and remove its data from our servers.
+                                Tindakan ini tidak dapat dibatalkan. Ini akan menghapus cabang secara permanen
+                                dan menghilangkan datanya dari server kami.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setBranchToDelete(null)}>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDeleteConfirm}>Continue</AlertDialogAction>
+                              <AlertDialogCancel onClick={() => setBranchToDelete(null)}>Batal</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteConfirm}>Lanjutkan</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -209,7 +209,7 @@ const Branches = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
-                  No branches found. Add one to get started.
+                  Tidak ada cabang yang ditemukan. Tambahkan satu untuk memulai.
                 </TableCell>
               </TableRow>
             )}
@@ -221,7 +221,7 @@ const Branches = () => {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit Branch</DialogTitle>
+              <DialogTitle>Ubah Cabang</DialogTitle>
             </DialogHeader>
             <EditBranchForm
               setDialogOpen={setIsEditDialogOpen}
