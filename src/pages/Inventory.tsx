@@ -24,6 +24,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Branch } from "./Branches";
 import { Item } from "./Items";
 import ManageStockForm from "@/components/ManageStockForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog"; // Pastikan Dialog diimpor
+import AddInventoryForm from "@/components/AddInventoryForm"; // Import komponen baru
 
 export interface InventoryDoc {
   id: string;
@@ -47,6 +56,7 @@ const Inventory = () => {
   const [selectedInventory, setSelectedInventory] = useState<InventoryDoc | null>(null);
   const { role, user } = useAuth();
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
+  const [isAddInventoryFormOpen, setIsAddInventoryFormOpen] = useState(false); // State baru untuk form tambah inventaris
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Inventory Management";
@@ -111,8 +121,28 @@ const Inventory = () => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Inventory Management</CardTitle>
-          <CardDescription>View and manage stock levels across branches.</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Inventory Management</CardTitle>
+              <CardDescription>View and manage stock levels across branches.</CardDescription>
+            </div>
+            {(role === 'admin' || role === 'manager') && (
+              <Dialog open={isAddInventoryFormOpen} onOpenChange={setIsAddInventoryFormOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-indigo-600 hover:bg-indigo-500 text-white">Add New Inventory</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Add New Inventory Record</DialogTitle>
+                    <DialogDescription className="text-slate-300">
+                      Create a new inventory record for an item at a specific branch.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <AddInventoryForm setDialogOpen={setIsAddInventoryFormOpen} branches={branches} items={items} />
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
