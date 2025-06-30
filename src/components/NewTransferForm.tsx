@@ -77,9 +77,9 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
               <FormLabel className="text-slate-200">From Branch</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select source branch" /></SelectTrigger></FormControl>
-                <SelectContent className="bg-black border-white/20 text-white">
+                <SelectContent className="bg-black border-white/20 text-foreground">
                   {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
+                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10 text-slate-50">
                       {branch.name}
                     </SelectItem>
                   ))}
@@ -97,9 +97,9 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
               <FormLabel className="text-slate-200">To Branch</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select destination branch" /></SelectTrigger></FormControl>
-                <SelectContent className="bg-black border-white/20 text-white">
+                <SelectContent className="bg-black border-white/20 text-foreground">
                   {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
+                    <SelectItem key={branch.id} value={branch.id} className="hover:bg-white/10 focus:bg-white/10 text-slate-50">
                       {branch.name}
                     </SelectItem>
                   ))}
@@ -117,9 +117,9 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
               <FormLabel className="text-slate-200">Item</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl><SelectTrigger className="bg-black/30 border-white/20 text-white"><SelectValue placeholder="Select item to transfer" /></SelectTrigger></FormControl>
-                <SelectContent className="bg-black border-white/20 text-white">
+                <SelectContent className="bg-black border-white/20 text-foreground">
                   {items.map((item) => (
-                    <SelectItem key={item.id} value={item.id} className="hover:bg-white/10 focus:bg-white/10 text-white">
+                    <SelectItem key={item.id} value={item.id} className="hover:bg-white/10 focus:bg-white/10 text-slate-50">
                       {item.name} ({item.sku})
                     </SelectItem>
                   ))}
