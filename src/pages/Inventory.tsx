@@ -1,11 +1,24 @@
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, getDocs } from "firebase/firestore";
-import { useToast } from "@/components/ui/use-toast";
+import { collection, onSnapshot, getDocs, doc, getDoc } from "firebase/firestore";
+import { toast } from "sonner";
+import { Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Branch } from "./Branches";
@@ -19,14 +32,10 @@ export interface InventoryDoc {
   quantity: number;
 }
 
-export interface ProcessedInventoryItem {
-  id: string;
-  branchId: string;
+interface ProcessedInventory extends InventoryDoc {
   branchName: string;
-  itemId: string;
   itemName: string;
   itemSku: string;
-  quantity: number;
 }
 
 const Inventory = () => {
@@ -34,25 +43,29 @@ const Inventory = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBranch, setSelectedBranch] = useState<string>("all");
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const { role } = useAuth();
-  const { toast } = useToast();
-  const isAdminOrManager = role === 'admin' || role === 'manager';
+  const [isManageStockFormOpen, setIsManageStockFormOpen] = useState(false);
+  const [selectedInventory, setSelectedInventory] = useState<InventoryDoc | null>(null);
+  const { role, user } = useAuth();
+  const [userBranchId, setUserBranchId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const branchesSnapshot = await getDocs(collection(db, "branches"));
-        const branchesData = branchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Branch[];
-        setBranches(branchesData);
+        setBranches(branchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Branch[]);
 
         const itemsSnapshot = await getDocs(collection(db, "items"));
-        const itemsData = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[];
-        setItems(itemsData);
+        setItems(itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[]);
+
+        if (user && role === 'manager') {
+          const userDocSnap = await getDoc(doc(db, "users", user.uid));
+          if (userDocSnap.exists()) {
+            setUserBranchId(userDocSnap.data().branchId || null);
+          }
+        }
       } catch (error) {
-        console.error("Error fetching initial data: ", error);
-        toast({ title: "Error", description: "Failed to fetch branches or items.", variant: "destructive" });
+        console.error("Error fetching initial data:", error);
+        toast.error("Failed to load required data.");
       }
     };
 
@@ -63,114 +76,104 @@ const Inventory = () => {
       setInventory(inventoryData);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching inventory: ", error);
-      toast({ title: "Error", description: "Failed to fetch inventory data.", variant: "destructive" });
+      console.error("Error fetching inventory:", error);
+      toast.error("Failed to fetch inventory data.");
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, [user, role]);
 
   const processedInventory = useMemo(() => {
-    if (items.length === 0 || branches.length === 0) return [];
     const itemsMap = new Map(items.map(item => [item.id, item]));
     const branchesMap = new Map(branches.map(branch => [branch.id, branch]));
 
-    return inventory.map(inv => {
-      const item = itemsMap.get(inv.itemId);
-      const branch = branchesMap.get(inv.branchId);
-      return {
-        id: inv.id,
-        branchId: inv.branchId,
-        branchName: branch?.name || "Unknown Branch",
-        itemId: inv.itemId,
-        itemName: item?.name || "Unknown Item",
-        itemSku: item?.sku || "N/A",
-        quantity: inv.quantity,
-      };
-    });
-  }, [inventory, items, branches]);
-
-  const filteredInventory = useMemo(() => {
-    if (selectedBranch === "all") {
-      return processedInventory;
+    let filteredInventory = inventory;
+    if (role === 'manager' && userBranchId) {
+      filteredInventory = inventory.filter(inv => inv.branchId === userBranchId);
     }
-    return processedInventory.filter(item => item.branchId === selectedBranch);
-  }, [processedInventory, selectedBranch]);
+
+    return filteredInventory.map(inv => ({
+      ...inv,
+      branchName: branchesMap.get(inv.branchId)?.name || "Unknown Branch",
+      itemName: itemsMap.get(inv.itemId)?.name || "Unknown Item",
+      itemSku: itemsMap.get(inv.itemId)?.sku || "N/A",
+    }));
+  }, [inventory, items, branches, role, userBranchId]);
+
+  const handleManageStockClick = (inv: InventoryDoc) => {
+    setSelectedInventory(inv);
+    setIsManageStockFormOpen(true);
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <CardTitle>Inventory Management</CardTitle>
-            <CardDescription>View and manage stock levels across branches.</CardDescription>
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by branch" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Branches</SelectItem>
-                {branches.map(branch => (
-                  <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isAdminOrManager && (
-              <Button onClick={() => setIsFormOpen(true)} className="w-full sm:w-auto">Manage Stock</Button>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item Name</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Branch</TableHead>
-              <TableHead className="text-right">Quantity</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
-                </TableRow>
-              ))
-            ) : filteredInventory.length > 0 ? (
-              filteredInventory.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.itemName}</TableCell>
-                  <TableCell>{item.itemSku}</TableCell>
-                  <TableCell>{item.branchName}</TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                </TableRow>
-              ))
-            ) : (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Inventory Management</CardTitle>
+          <CardDescription>View and manage stock levels across branches.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  No inventory records found.
-                </TableCell>
+                <TableHead>Branch</TableHead>
+                <TableHead>Item Name</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead className="text-center">Quantity</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-      
-      <ManageStockForm
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        branches={branches}
-        items={items}
-      />
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                  </TableRow>
+                ))
+              ) : processedInventory.length > 0 ? (
+                processedInventory.map((inv) => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-medium">{inv.branchName}</TableCell>
+                    <TableCell>{inv.itemName}</TableCell>
+                    <TableCell>{inv.itemSku}</TableCell>
+                    <TableCell className="text-center">{inv.quantity}</TableCell>
+                    <TableCell className="text-right">
+                      {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
+                        <Button variant="ghost" size="icon" onClick={() => handleManageStockClick(inv)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">
+                    No inventory records found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {selectedInventory && (
+        <ManageStockForm
+          isOpen={isManageStockFormOpen}
+          onClose={() => {
+            setIsManageStockFormOpen(false);
+            setSelectedInventory(null);
+          }}
+          inventoryItem={selectedInventory}
+        />
+      )}
+    </>
   );
 };
 
