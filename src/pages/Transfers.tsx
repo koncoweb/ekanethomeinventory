@@ -35,16 +35,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, getDocs, doc, updateDoc, runTransaction, getDoc, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, runTransaction, getDoc, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, deleteDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { NewTransferForm } from "@/components/NewTransferForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Branch } from "./Branches";
-import { Item } from "./Items";
 import { Badge } from "@/components/ui/badge";
 import { useData } from "@/contexts/DataContext";
-import { Trash2 } from "lucide-react"; // Import Trash2 icon
+import { Trash2 } from "lucide-react";
+import { InventoryDoc, InventoryEntry } from "./Inventory";
 
 export interface Transfer {
   id: string;
@@ -54,10 +53,10 @@ export interface Transfer {
   quantity: number;
   status: "pending" | "completed" | "rejected";
   createdAt: any; // Firebase Timestamp
-  totalValue: number; // Menambahkan totalValue
+  totalValue: number;
 }
 
-const ITEMS_PER_PAGE = 10; // Jumlah item per halaman
+const ITEMS_PER_PAGE = 10;
 
 const Transfers = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
@@ -68,13 +67,11 @@ const Transfers = () => {
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const { role, user } = useAuth();
   const [userBranchId, setUserBranchId] = useState<string | null>(null);
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false); // State for delete alert
-  const [transferToDeleteId, setTransferToDeleteId] = useState<string | null>(null); // State for transfer to delete
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [transferToDeleteId, setTransferToDeleteId] = useState<string | null>(null);
 
-  // State untuk paginasi
+  const pageCursorsRef = useRef<Array<QueryDocumentSnapshot<DocumentData> | null>>([null]);
   const [currentPage, setCurrentPage] = useState(1);
-  // Menggunakan useRef untuk menyimpan kursor halaman agar tidak memicu re-render yang tidak perlu
-  const pageCursorsRef = useRef<Array<QueryDocumentSnapshot<DocumentData> | null>>([null]); // pageCursorsRef.current[0] untuk halaman 1, pageCursorsRef.current[1] untuk halaman 2, dst.
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
@@ -91,21 +88,19 @@ const Transfers = () => {
   }, [user, role]);
 
   useEffect(() => {
-    // Jangan fetch data transfer jika data global (branches/items) masih loading
     if (dataLoading) {
-      setLoading(true); // Tetap tampilkan skeleton jika data global belum siap
+      setLoading(true);
       return;
     }
 
     setLoading(true);
+    const currentCursor = pageCursorsRef.current[currentPage - 1];
     let transfersQuery = query(
       collection(db, "transfers"),
       orderBy("createdAt", "desc"),
       limit(ITEMS_PER_PAGE)
     );
 
-    // Dapatkan kursor untuk halaman saat ini
-    const currentCursor = pageCursorsRef.current[currentPage - 1];
     if (currentCursor) {
       transfersQuery = query(
         collection(db, "transfers"),
@@ -116,17 +111,12 @@ const Transfers = () => {
     }
 
     const unsubscribe = onSnapshot(transfersQuery, (snapshot) => {
-      const transfersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Transfer[];
+      const transfersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Transfer[];
       setTransfers(transfersData);
       setLoading(false);
 
       if (snapshot.docs.length > 0) {
         const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-        // Simpan kursor untuk halaman berikutnya (currentPage + 1)
-        // Update ref secara langsung, tidak memicu re-render
         if (pageCursorsRef.current.length <= currentPage) {
           pageCursorsRef.current.push(lastDoc);
         } else {
@@ -143,7 +133,7 @@ const Transfers = () => {
     });
 
     return () => unsubscribe();
-  }, [currentPage, dataLoading]); // Dependensi yang bersih: hanya berubah saat halaman atau status loading data global berubah
+  }, [currentPage, dataLoading]);
 
   const processedTransfers = useMemo(() => {
     const branchesMap = new Map(branches.map(branch => [branch.id, branch.name]));
@@ -160,7 +150,7 @@ const Transfers = () => {
   const handleProcessTransfer = async () => {
     if (!transferToProcess || !actionType) return;
 
-    const { fromBranchId, toBranchId, itemId, quantity, totalValue, id: transferId } = transferToProcess;
+    const { fromBranchId, toBranchId, itemId, quantity, id: transferId } = transferToProcess;
 
     try {
       if (actionType === "approve") {
@@ -170,41 +160,55 @@ const Transfers = () => {
           const transferRef = doc(db, "transfers", transferId);
 
           const fromInventorySnap = await transaction.get(fromInventoryRef);
-          const toInventorySnap = await transaction.get(toInventoryRef);
-
-          if (!fromInventorySnap.exists() || fromInventorySnap.data().quantity < quantity) {
-            throw new Error("Insufficient stock at source branch.");
+          if (!fromInventorySnap.exists()) {
+            throw new Error("Source inventory not found.");
           }
 
-          // Decrease source inventory
-          const fromData = fromInventorySnap.data();
-          const newFromQuantity = fromData.quantity - quantity;
-          const newFromTotalValue = (fromData.totalValue || 0) - totalValue;
-          transaction.update(fromInventoryRef, {
-            quantity: newFromQuantity,
-            totalValue: newFromTotalValue,
-          });
+          const fromInventoryData = fromInventorySnap.data() as InventoryDoc;
+          let fromEntries = [...(fromInventoryData.entries || [])];
+          
+          fromEntries.sort((a, b) => a.purchaseDate.toMillis() - b.purchaseDate.toMillis());
 
-          // Increase destination inventory
+          let quantityToTransfer = quantity;
+          const transferredEntries: InventoryEntry[] = [];
+          const remainingEntries: InventoryEntry[] = [];
+
+          let totalQuantityInStock = fromEntries.reduce((sum, e) => sum + e.quantity, 0);
+          if (totalQuantityInStock < quantityToTransfer) {
+            throw new Error(`Insufficient stock. Only ${totalQuantityInStock} available.`);
+          }
+
+          for (const entry of fromEntries) {
+            if (quantityToTransfer <= 0) {
+              remainingEntries.push(entry);
+              continue;
+            }
+
+            if (entry.quantity <= quantityToTransfer) {
+              transferredEntries.push(entry);
+              quantityToTransfer -= entry.quantity;
+            } else {
+              transferredEntries.push({ ...entry, quantity: quantityToTransfer, totalValue: quantityToTransfer * entry.purchasePrice });
+              remainingEntries.push({ ...entry, quantity: entry.quantity - quantityToTransfer, totalValue: (entry.quantity - quantityToTransfer) * entry.purchasePrice });
+              quantityToTransfer = 0;
+            }
+          }
+
+          transaction.update(fromInventoryRef, { entries: remainingEntries });
+
+          const toInventorySnap = await transaction.get(toInventoryRef);
           if (toInventorySnap.exists()) {
-            const toData = toInventorySnap.data();
-            const newToQuantity = toData.quantity + quantity;
-            const newToTotalValue = (toData.totalValue || 0) + totalValue;
-            transaction.update(toInventoryRef, {
-              quantity: newToQuantity,
-              totalValue: newToTotalValue,
-            });
+            const toInventoryData = toInventorySnap.data() as InventoryDoc;
+            const newEntries = [...(toInventoryData.entries || []), ...transferredEntries];
+            transaction.update(toInventoryRef, { entries: newEntries });
           } else {
-            // Create new inventory record for destination
             transaction.set(toInventoryRef, {
               branchId: toBranchId,
               itemId: itemId,
-              quantity: quantity,
-              totalValue: totalValue,
+              entries: transferredEntries,
             });
           }
 
-          // Mark transfer as completed
           transaction.update(transferRef, { status: "completed" });
         });
         toast.success("Transfer approved and inventory updated.");
@@ -244,15 +248,11 @@ const Transfers = () => {
   };
 
   const handleNextPage = () => {
-    if (hasMore) {
-      setCurrentPage(prev => prev + 1);
-    }
+    if (hasMore) setCurrentPage(prev => prev + 1);
   };
 
   const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
-    }
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
   };
 
   return (

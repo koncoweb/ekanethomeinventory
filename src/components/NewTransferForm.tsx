@@ -19,10 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { Branch } from "@/pages/Branches";
 import { Item } from "@/pages/Items";
+import { InventoryDoc } from "@/pages/Inventory";
 
 const formSchema = z.object({
   fromBranchId: z.string().min(1, { message: "Please select a source branch." }),
@@ -53,20 +54,34 @@ export const NewTransferForm = ({ setDialogOpen, branches, items }: NewTransferF
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // Find the selected item to get its price
-      const selectedItem = items.find(item => item.id === values.itemId);
-      if (!selectedItem) {
-        toast.error("Selected item not found.");
+      // Fetch source inventory to check stock and get average price
+      const inventoryId = `${values.fromBranchId}_${values.itemId}`;
+      const inventoryRef = doc(db, "inventory", inventoryId);
+      const inventorySnap = await getDoc(inventoryRef);
+
+      if (!inventorySnap.exists()) {
+        toast.error("Item does not exist in the source branch's inventory.");
         return;
       }
-      const price = selectedItem.price || 0;
-      const totalValue = values.quantity * price;
+
+      const inventoryData = inventorySnap.data() as InventoryDoc;
+      const entries = inventoryData.entries || [];
+      const totalQuantity = entries.reduce((sum, entry) => sum + entry.quantity, 0);
+      const totalValueInStock = entries.reduce((sum, entry) => sum + entry.totalValue, 0);
+
+      if (totalQuantity < values.quantity) {
+        toast.error(`Insufficient stock. Only ${totalQuantity} available in source branch.`);
+        return;
+      }
+
+      const averagePrice = totalQuantity > 0 ? totalValueInStock / totalQuantity : 0;
+      const transferTotalValue = values.quantity * averagePrice;
 
       await addDoc(collection(db, "transfers"), {
         ...values,
         status: "pending",
         createdAt: serverTimestamp(),
-        totalValue, // Save the calculated total value
+        totalValue: transferTotalValue,
       });
       toast.success("Transfer request created successfully.");
       setDialogOpen(false);
