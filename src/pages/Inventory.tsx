@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, deleteDoc, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
-import { PlusCircle, Eye, Trash2 } from "lucide-react";
+import { PlusCircle, Eye, Trash2, Printer } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useData } from "@/contexts/DataContext";
@@ -222,38 +222,53 @@ const Inventory = () => {
     if (currentPage > 1) setCurrentPage(prev => prev - 1);
   };
 
+  const handlePrintAll = () => {
+    const tableCard = document.querySelector('#inventory-table-card');
+    if (tableCard) {
+      tableCard.classList.add('printable-area');
+      window.print();
+      tableCard.classList.remove('printable-area');
+    }
+  };
+
   return (
     <>
-      <Card>
-        <CardHeader>
+      <Card id="inventory-table-card">
+        <CardHeader className="no-print">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle>Inventory Management</CardTitle>
               <CardDescription>View and manage stock levels across branches.</CardDescription>
             </div>
-            {role === 'admin' && (
-              <Dialog open={isAddInventoryOpen} onOpenChange={setIsAddInventoryOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Initial Stock
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Add Initial Stock</DialogTitle>
-                    <DialogDescription className="text-slate-300">
-                      Create the first inventory record for an item at a specific branch.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AddInventoryForm 
-                    setDialogOpen={setIsAddInventoryOpen} 
-                    branches={branches} 
-                    items={items} 
-                  />
-                </DialogContent>
-              </Dialog>
-            )}
+            <div className="flex items-center space-x-2">
+              <Button onClick={handlePrintAll} variant="outline">
+                <Printer className="h-4 w-4 mr-2" />
+                Cetak Semua
+              </Button>
+              {role === 'admin' && (
+                <Dialog open={isAddInventoryOpen} onOpenChange={setIsAddInventoryOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Add Initial Stock
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Add Initial Stock</DialogTitle>
+                      <DialogDescription className="text-slate-300">
+                        Create the first inventory record for an item at a specific branch.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <AddInventoryForm 
+                      setDialogOpen={setIsAddInventoryOpen} 
+                      branches={branches} 
+                      items={items} 
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -263,24 +278,25 @@ const Inventory = () => {
                 <TableHead>Branch</TableHead>
                 <TableHead>Item Name</TableHead>
                 <TableHead>SKU</TableHead>
+                <TableHead>Rack Location</TableHead>
                 <TableHead className="text-center">Total Quantity</TableHead>
                 <TableHead className="text-right">Avg. Price</TableHead>
                 <TableHead className="text-right">Total Value</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right no-print">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading || dataLoading ? (
                 Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-                  <TableRow key={index}><TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-48" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell></TableRow>
+                  <TableRow key={index}><TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-48" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-5 w-20" /></TableCell><TableCell className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell><TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell><TableCell className="text-right no-print"><Skeleton className="h-8 w-28 ml-auto" /></TableCell></TableRow>
                 ))
               ) : processedInventory.length > 0 ? (
                 processedInventory.map((inv) => (
-                  <TableRow key={inv.id}><TableCell className="font-medium">{inv.branchName}</TableCell><TableCell>{inv.itemName}</TableCell><TableCell>{inv.itemSku}</TableCell><TableCell className="text-center">{inv.totalQuantity}</TableCell><TableCell className="text-right">
+                  <TableRow key={inv.id}><TableCell className="font-medium">{inv.branchName}</TableCell><TableCell>{inv.itemName}</TableCell><TableCell>{inv.itemSku}</TableCell><TableCell>{inv.rackLocation || 'N/A'}</TableCell><TableCell className="text-center">{inv.totalQuantity}</TableCell><TableCell className="text-right">
                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(inv.averagePrice)}
                   </TableCell><TableCell className="text-right">
                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(inv.totalValue)}
-                  </TableCell><TableCell className="text-right">
+                  </TableCell><TableCell className="text-right no-print">
                     {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
                       <div className="flex justify-end items-center space-x-1">
                         <Button variant="outline" size="sm" onClick={() => handleAddStockClick(inv)}>
@@ -299,13 +315,13 @@ const Inventory = () => {
                   </TableCell></TableRow>
                 ))
               ) : (
-                <TableRow><TableCell colSpan={7} className="text-center h-24">
+                <TableRow><TableCell colSpan={8} className="text-center h-24">
                   No inventory records found.
                 </TableCell></TableRow>
               )}
             </TableBody>
           </Table>
-          <div className="flex justify-between items-center mt-4">
+          <div className="flex justify-between items-center mt-4 no-print">
             <Button onClick={handlePreviousPage} disabled={currentPage === 1 || loading || dataLoading} variant="outline">
               Previous
             </Button>

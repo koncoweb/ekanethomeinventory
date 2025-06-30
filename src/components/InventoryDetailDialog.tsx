@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -16,6 +17,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProcessedInventory } from "@/pages/Inventory";
 import { format } from 'date-fns';
+import { Button } from "./ui/button";
+import { Printer } from "lucide-react";
 
 interface InventoryDetailDialogProps {
   isOpen: boolean;
@@ -33,9 +36,18 @@ export const InventoryDetailDialog = ({ isOpen, onClose, inventoryItem }: Invent
     return 'N/A';
   };
 
+  const handlePrint = () => {
+    const dialogContent = document.querySelector('.inventory-detail-dialog');
+    if (dialogContent) {
+      dialogContent.classList.add('printable-area');
+      window.print();
+      dialogContent.classList.remove('printable-area');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl bg-black/20 backdrop-blur-lg border border-white/10 text-white">
+      <DialogContent className="sm:max-w-2xl bg-black/20 backdrop-blur-lg border border-white/10 text-white inventory-detail-dialog">
         <DialogHeader>
           <DialogTitle className="text-white">Stock Details for {inventoryItem.itemName}</DialogTitle>
           <DialogDescription className="text-slate-300">
@@ -78,6 +90,12 @@ export const InventoryDetailDialog = ({ isOpen, onClose, inventoryItem }: Invent
             </TableBody>
           </Table>
         </ScrollArea>
+        <DialogFooter className="no-print">
+          <Button onClick={handlePrint} variant="outline">
+            <Printer className="h-4 w-4 mr-2" />
+            Cetak Kartu Stok
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

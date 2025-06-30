@@ -100,3 +100,62 @@
     background-image: linear-gradient(to bottom right, #0f172a, #1e1b4b, #0f172a);
   }
 }
+
+@media print {
+  /* Sembunyikan semua elemen secara default saat mencetak */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Tampilkan hanya area yang bisa dicetak dan semua elemen di dalamnya */
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+
+  /* Posisikan area cetak di bagian atas halaman */
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Sembunyikan elemen yang ditandai sebagai no-print */
+  .no-print, .no-print * {
+    display: none !important;
+  }
+
+  /* Atur ulang style untuk mode cetak agar bersih */
+  @page {
+    size: auto;
+    margin: 0.5in;
+  }
+
+  body {
+    background: none !important;
+    color: #000 !important;
+  }
+
+  .printable-area table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .printable-area th, .printable-area td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    color: #000 !important;
+  }
+
+  .printable-area th {
+    background-color: #f2f2f2;
+  }
+
+  .printable-area .text-white,
+  .printable-area .text-slate-300,
+  .printable-area .text-slate-200 {
+    color: #000 !important;
+  }
+}
