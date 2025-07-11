@@ -6,40 +6,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+import { toast } from "sonner"; // Mengganti useToast dengan sonner
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setMpassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth(); // Dapatkan user dan authLoading dari AuthContext
+  // const { toast } = useToast(); // Dihapus, langsung pakai toast dari sonner
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Login";
-    // Jika AuthContext sudah selesai memuat dan ada pengguna, arahkan ke dashboard
     if (!authLoading && user) {
       navigate("/");
     }
-  }, [user, authLoading, navigate]); // Tambahkan user, authLoading, dan navigate sebagai dependensi
+  }, [user, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Masuk Berhasil",
+      toast.success("Masuk Berhasil", { // Menggunakan toast.success dari sonner
         description: "Selamat datang kembali!",
       });
-      // Hapus navigate("/") di sini. useEffect di atas akan menangani pengalihan.
     } catch (err: any) {
-      toast({
-        title: "Masuk Gagal",
+      toast.error("Masuk Gagal", { // Menggunakan toast.error dari sonner
         description: "Email atau kata sandi tidak valid.",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);

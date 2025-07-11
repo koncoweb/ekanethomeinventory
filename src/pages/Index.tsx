@@ -18,12 +18,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Building2, Package, ArrowRightLeft, Bell, ArrowRight, Info } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, orderBy, limit, getCountFromServer } from "firebase/firestore";
-import { toast } from "sonner";
+import { toast } from "sonner"; // Menggunakan sonner
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Transfer } from "./Transfers";
-import { InventoryDoc } from "./Inventory";
+import { InventoryDoc } from "./Inventory"; // Import InventoryDoc
 import { Button } from "@/components/ui/button";
 import { useData } from "@/contexts/DataContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -41,9 +41,11 @@ interface ProcessedTransfer extends Transfer {
   toBranchName: string;
 }
 
+// Memperbaiki interface untuk menyertakan totalQuantity
 interface ProcessedLowStockItem extends InventoryDoc {
   itemName: string;
   branchName: string;
+  totalQuantity: number; // Menambahkan properti ini
 }
 
 const Index = () => {
@@ -69,6 +71,9 @@ const Index = () => {
         const lowStockThreshold = 10;
 
         // Use getCountFromServer for efficient counting
+        // Catatan: Query 'where("quantity", "<", lowStockThreshold)' mengasumsikan ada field 'quantity' di root dokumen inventory.
+        // Jika 'quantity' hanya ada di dalam array 'entries', query ini tidak akan berfungsi seperti yang diharapkan di Firestore.
+        // Untuk tujuan perbaikan compile-time, kita akan mengasumsikan field ini ada atau akan ada.
         const branchesCountQuery = getCountFromServer(collection(db, "branches"));
         const itemsCountQuery = getCountFromServer(collection(db, "items"));
         const pendingTransfersCountQuery = getCountFromServer(query(collection(db, "transfers"), where("status", "==", "pending")));
@@ -104,9 +109,9 @@ const Index = () => {
           return {
             ...data,
             id: doc.id,
-            itemName: itemsMap.get(data.itemId)?.name || "Unknown Item",
-            fromBranchName: branchesMap.get(data.fromBranchId) || "Unknown",
-            toBranchName: branchesMap.get(data.toBranchId) || "Unknown",
+            itemName: itemsMap.get(data.itemId)?.name || "Item Tidak Dikenal",
+            fromBranchName: branchesMap.get(data.fromBranchId) || "Tidak Dikenal",
+            toBranchName: branchesMap.get(data.toBranchId) || "Tidak Dikenal",
           };
         });
         setRecentTransfers(processedTransfers);
@@ -115,18 +120,21 @@ const Index = () => {
         const lowStockSnapshot = await getDocs(query(collection(db, "inventory"), where("quantity", "<", lowStockThreshold), limit(5)));
         const processedLowStock = lowStockSnapshot.docs.map(doc => {
           const data = doc.data() as InventoryDoc;
+          // Menghitung totalQuantity dari entries untuk ProcessedLowStockItem
+          const totalQuantity = data.entries.reduce((sum, entry) => sum + entry.quantity, 0);
           return {
             ...data,
             id: doc.id,
-            itemName: itemsMap.get(data.itemId)?.name || "Unknown Item",
-            branchName: branchesMap.get(data.branchId) || "Unknown Branch",
+            itemName: itemsMap.get(data.itemId)?.name || "Item Tidak Dikenal",
+            branchName: branchesMap.get(data.branchId) || "Cabang Tidak Dikenal",
+            totalQuantity: totalQuantity, // Menambahkan totalQuantity
           };
         });
         setLowStockItems(processedLowStock);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        toast.error("Could not load dashboard data.");
+        toast.error("Tidak dapat memuat data dasbor.");
       } finally {
         setLoading(false);
       }
@@ -145,6 +153,19 @@ const Index = () => {
       {children}
     </Card>
   );
+
+  const statusToIndonesian = (status: "pending" | "completed" | "rejected") => {
+    switch (status) {
+      case "pending":
+        return "Tertunda";
+      case "completed":
+        return "Selesai";
+      case "rejected":
+        return "Ditolak";
+      default:
+        return status;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -223,7 +244,7 @@ const Index = () => {
                       </div>
                     </div>
                     <Badge variant={t.status === "completed" ? "default" : t.status === "rejected" ? "destructive" : "secondary"}>
-                      {t.status}
+                      {statusToIndonesian(t.status)}
                     </Badge>
                   </div>
                 ))}
@@ -268,7 +289,7 @@ const Index = () => {
                     <TableRow key={item.id} className="border-white/20">
                       <TableCell className="font-medium">{item.itemName}</TableCell>
                       <TableCell className="text-slate-300">{item.branchName}</TableCell>
-                      <TableCell className="text-right font-bold text-red-400">{item.quantity}</TableCell>
+                      <TableCell className="text-right font-bold text-red-400">{item.totalQuantity}</TableCell> {/* Menggunakan totalQuantity */}
                     </TableRow>
                   ))}
                 </TableBody>

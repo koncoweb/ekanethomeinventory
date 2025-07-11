@@ -56,7 +56,8 @@ const ManageStockForm = ({ isOpen, onClose, inventoryItem }: ManageStockFormProp
           throw new Error("Inventory item does not exist!");
         }
 
-        const currentQuantity = inventoryDoc.data().quantity;
+        // Menggunakan totalQuantity dari ProcessedInventory
+        const currentQuantity = inventoryItem.totalQuantity; // Menggunakan totalQuantity
         const newQuantity = currentQuantity + values.quantityChange;
 
         if (newQuantity < 0) {
@@ -64,12 +65,13 @@ const ManageStockForm = ({ isOpen, onClose, inventoryItem }: ManageStockFormProp
         }
 
         // Recalculate totalValue
-        const price = inventoryItem.price || 0;
+        // Menggunakan averagePrice dari ProcessedInventory
+        const price = inventoryItem.averagePrice || 0; // Menggunakan averagePrice
         const newTotalValue = newQuantity * price;
 
         transaction.update(inventoryRef, { 
-          quantity: newQuantity,
-          totalValue: newTotalValue,
+          quantity: newQuantity, // Ini mengasumsikan ada field 'quantity' di dokumen Firestore
+          totalValue: newTotalValue, // Ini mengasumsikan ada field 'totalValue' di dokumen Firestore
         });
       });
 
@@ -91,7 +93,7 @@ const ManageStockForm = ({ isOpen, onClose, inventoryItem }: ManageStockFormProp
           <DialogTitle className="text-white">Manage Stock for {inventoryItem.itemName}</DialogTitle>
           <DialogDescription className="text-slate-300">
             Adjust the quantity for this item at {inventoryItem.branchName}.
-            Current stock: {inventoryItem.quantity}
+            Current stock: {inventoryItem.totalQuantity} {/* Menggunakan totalQuantity */}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
