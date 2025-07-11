@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Import useRef
 import { collection, onSnapshot, orderBy, query, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +32,7 @@ const OutgoingItems = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<OutgoingItemDoc | null>(null);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const mainPrintableAreaRef = useRef<HTMLDivElement>(null); // Ref for the main table's printable area
 
   useEffect(() => {
     const q = query(collection(db, "outgoing_items"), orderBy("createdAt", "desc"));
@@ -56,8 +57,20 @@ const OutgoingItems = () => {
     setIsFormOpen(false);
   };
 
-  const handlePrint = () => {
+  const handlePrintAll = () => { // Function to print the entire report
+    setIsPrintDialogOpen(false); // Ensure dialog is closed
     window.print();
+  };
+
+  const handlePrintReceipt = () => { // Function to print only the selected item's receipt
+    if (mainPrintableAreaRef.current) {
+      mainPrintableAreaRef.current.classList.add('no-print'); // Temporarily hide main table
+    }
+    window.print();
+    if (mainPrintableAreaRef.current) {
+      mainPrintableAreaRef.current.classList.remove('no-print'); // Restore main table visibility
+    }
+    setIsPrintDialogOpen(false); // Close the dialog after printing
   };
 
   const handleOpenPrintDialog = (item: OutgoingItemDoc) => {
@@ -67,7 +80,7 @@ const OutgoingItems = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div className="printable-area">
+      <div className="printable-area" ref={mainPrintableAreaRef}> {/* Apply ref here */}
         <Card>
           <CardHeader>
             <div className="flex flex-row items-center justify-between no-print">
@@ -92,7 +105,7 @@ const OutgoingItems = () => {
                     </DialogContent>
                   </Dialog>
                 )}
-                <Button variant="outline" onClick={handlePrint}>
+                <Button variant="outline" onClick={handlePrintAll}> {/* Use handlePrintAll */}
                   <Printer className="mr-2 h-4 w-4" />
                   Cetak Laporan
                 </Button>
@@ -189,7 +202,7 @@ const OutgoingItems = () => {
               </div>
             </div>
             <DialogFooter className="no-print">
-              <Button onClick={handlePrint}>Cetak Struk</Button>
+              <Button onClick={handlePrintReceipt}>Cetak Struk</Button> {/* Use handlePrintReceipt */}
             </DialogFooter>
           </DialogContent>
         </Dialog>
