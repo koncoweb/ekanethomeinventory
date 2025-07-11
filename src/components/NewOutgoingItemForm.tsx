@@ -44,26 +44,36 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
 
   useEffect(() => {
     const fetchInventories = async () => {
-      if (itemsMap.size === 0 || branchesMap.size === 0) return;
+      // Only fetch inventories if itemsMap and branchesMap are populated
+      if (itemsMap.size === 0 || branchesMap.size === 0) {
+        setInventoryOptions([]); // Clear options if maps are not ready
+        return;
+      }
 
-      const inventorySnapshot = await getDocs(collection(db, "inventory"));
-      const options = inventorySnapshot.docs.map(docSnap => {
-        const inventory = { id: docSnap.id, ...docSnap.data() } as InventoryDoc;
-        const item = itemsMap.get(inventory.itemId);
-        const itemName = item?.name || "Item Tidak Dikenal";
-        const branchName = branchesMap.get(inventory.branchId) || "Cabang Tidak Dikenal";
-        const currentStock = inventory.entries.reduce((acc, entry) => acc + entry.quantity, 0);
-        
-        return {
-          value: inventory.id,
-          label: `${itemName} - ${branchName}`,
-          currentStock,
-        };
-      }).filter(opt => opt.currentStock > 0); // Hanya tampilkan item yang memiliki stok
-      setInventoryOptions(options);
+      try {
+        const inventorySnapshot = await getDocs(collection(db, "inventory"));
+        const options = inventorySnapshot.docs.map(docSnap => {
+          const inventory = { id: docSnap.id, ...docSnap.data() } as InventoryDoc;
+          const item = itemsMap.get(inventory.itemId);
+          const itemName = item?.name || "Item Tidak Dikenal";
+          const branchName = branchesMap.get(inventory.branchId) || "Cabang Tidak Dikenal";
+          const currentStock = inventory.entries.reduce((acc, entry) => acc + entry.quantity, 0);
+          
+          return {
+            value: inventory.id,
+            label: `${itemName} - ${branchName}`,
+            currentStock,
+          };
+        }).filter(opt => opt.currentStock > 0); // Hanya tampilkan item yang memiliki stok
+        setInventoryOptions(options);
+      } catch (error) {
+        console.error("Error fetching inventories for outgoing form:", error);
+        toast.error("Gagal memuat daftar inventaris.");
+        setInventoryOptions([]);
+      }
     };
     fetchInventories();
-  }, [itemsMap, branchesMap, onTransactionComplete]);
+  }, [itemsMap, branchesMap, onTransactionComplete]); // Dependencies ensure re-fetch when maps are ready
 
   const handleInventoryChange = (inventoryId: string) => {
     const selectedOption = inventoryOptions.find(opt => opt.value === inventoryId);
@@ -76,8 +86,6 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
     const toastId = toast.loading("Memproses barang keluar...");
 
     try {
-      const [branchId, itemId] = values.inventoryId.split('_');
-      
       await runTransaction(db, async (transaction) => {
         const inventoryRef = doc(db, "inventory", values.inventoryId);
         const inventoryDoc = await transaction.get(inventoryRef);
@@ -119,9 +127,9 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
 
         const newOutgoingItemRef = doc(collection(db, "outgoing_items"));
         transaction.set(newOutgoingItemRef, {
-          inventoryId: values.inventoryId,
-          itemId,
-          branchId,
+          inventoryId: values.inventoryId, // Keep this as the reference to the inventory document
+          itemId: inventoryData.itemId, // Correctly get itemId from inventoryData
+          branchId: inventoryData.branchId, // Correctly get branchId from inventoryData
           quantity: values.quantity,
           reason: values.reason,
           totalValue: totalValueRemoved,
@@ -166,11 +174,17 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {inventoryOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label} (Stok: {opt.currentStock})
+                  {inventoryOptions.length > 0 ? (
+                    inventoryOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label} (Stok: {opt.currentStock})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-items" disabled>
+                      Tidak ada item inventaris dengan stok tersedia.
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
