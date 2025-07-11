@@ -152,7 +152,7 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
           name="inventoryId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Pilih Inventaris Barang</FormLabel>
+              <FormLabel className="text-black">Pilih Inventaris Barang</FormLabel>
               <Select
                 onValueChange={(value) => {
                   field.onChange(value);
@@ -182,7 +182,7 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
           name="quantity"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Jumlah Keluar</FormLabel>
+              <FormLabel className="text-black">Jumlah Keluar</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="e.g., 5" {...field} />
               </FormControl>
@@ -196,7 +196,7 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
           name="reason"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Alasan Barang Keluar</FormLabel>
+              <FormLabel className="text-black">Alasan Barang Keluar</FormLabel>
               <FormControl>
                 <Textarea placeholder="e.g., Penjualan, Rusak, Kadaluarsa..." {...field} />
               </FormControl>
