@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, Package, Warehouse, ArrowRightLeft, LogOut, Home, Users, BookOpenText } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { toast } from "sonner"; // Mengganti useToast dengan sonner
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navLinks = [
@@ -11,7 +11,7 @@ const navLinks = [
   { to: "/branches", icon: Building2, label: "Cabang" },
   { to: "/items", icon: Package, label: "Item" },
   { to: "/inventory", icon: Warehouse, label: "Inventaris" },
-  { to: "/transfers", icon: ArrowRightLeft, label: "Transfer" },
+  // { to: "/transfers", icon: ArrowRightLeft, label: "Transfer" }, // This line is commented out to hide the link
   { to: "/tutorial", icon: BookOpenText, label: "Tutorial" },
 ];
 
@@ -21,18 +21,17 @@ const adminLinks = [
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  // const { toast } = useToast(); // Dihapus, langsung pakai toast dari sonner
   const { role } = useAuth();
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      toast.success("Berhasil Keluar", { // Menggunakan toast.success dari sonner
+      toast.success("Berhasil Keluar", {
         description: "Anda telah berhasil keluar.",
       });
       navigate("/login");
     } catch (error) {
-      toast.error("Gagal Keluar", { // Menggunakan toast.error dari sonner
+      toast.error("Gagal Keluar", {
         description: "Terjadi kesalahan saat keluar.",
       });
     }
