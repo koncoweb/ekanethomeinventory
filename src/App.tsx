@@ -7,7 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { AuthProvider } from "./contexts/AuthContext";
-import { DataProvider } from "./contexts/DataContext"; // New import
+import { DataProvider } from "./contexts/DataContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Branches from "./pages/Branches";
@@ -15,7 +15,9 @@ import Items from "./pages/Items";
 import Inventory from "./pages/Inventory";
 import Transfers from "./pages/Transfers";
 import Users from "./pages/Users";
-import Tutorial from "./pages/Tutorial"; // New import
+import Tutorial from "./pages/Tutorial";
+import IncomingItems from "./pages/IncomingItems"; // New import
+import OutgoingItems from "./pages/OutgoingItems"; // New import
 
 const queryClient = new QueryClient();
 
@@ -37,7 +39,9 @@ const App = () => (
                   <Route path="/inventory" element={<Inventory />} />
                   <Route path="/transfers" element={<Transfers />} />
                   <Route path="/users" element={<Users />} />
-                  <Route path="/tutorial" element={<Tutorial />} /> {/* New route */}
+                  <Route path="/tutorial" element={<Tutorial />} />
+                  <Route path="/incoming-items" element={<IncomingItems />} /> {/* New route */}
+                  <Route path="/outgoing-items" element={<OutgoingItems />} /> {/* New route */}
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />
