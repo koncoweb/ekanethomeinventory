@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2, Package, ArrowRightLeft, Bell, ArrowRight, Info, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Package, Bell, ArrowRight, Info, ArrowDownCircle, ArrowUpCircle } from "lucide-react"; // Removed Building2, ArrowRightLeft
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, orderBy, limit, getCountFromServer } from "firebase/firestore";
 import { toast } from "sonner";
@@ -30,10 +30,10 @@ import { IncomingItem } from "./IncomingItems";
 import { OutgoingItemDoc } from "./OutgoingItems";
 
 interface DashboardStats {
-  totalBranches: number;
   totalItems: number;
-  pendingTransfers: number;
   lowStockAlerts: number;
+  totalIncoming: number; // New stat
+  totalOutgoing: number; // New stat
 }
 
 interface RecentActivity {
@@ -56,10 +56,10 @@ const Index = () => {
   const { user } = useAuth();
   const { branchesMap, itemsMap, loading: dataLoading } = useData();
   const [stats, setStats] = useState<DashboardStats>({
-    totalBranches: 0,
     totalItems: 0,
-    pendingTransfers: 0,
     lowStockAlerts: 0,
+    totalIncoming: 0,
+    totalOutgoing: 0,
   });
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [recentInventory, setRecentInventory] = useState<RecentInventoryItem[]>([]);
@@ -72,12 +72,11 @@ const Index = () => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // Stats Queries (some might be inefficient, kept as is for now)
-        const branchesCountQuery = getCountFromServer(collection(db, "branches"));
+        // Stats Queries
         const itemsCountQuery = getCountFromServer(collection(db, "items"));
-        const pendingTransfersCountQuery = getCountFromServer(query(collection(db, "transfers"), where("status", "==", "pending")));
-        // Note: lowStockCountQuery is likely inaccurate as `quantity` is not a root field.
         const lowStockCountQuery = getCountFromServer(query(collection(db, "inventory"), where("quantity", "<", 10)));
+        const incomingCountQuery = getCountFromServer(collection(db, "incoming_items")); // New query
+        const outgoingCountQuery = getCountFromServer(collection(db, "outgoing_items")); // New query
 
         // Data for new cards
         const incomingQuery = getDocs(query(collection(db, "incoming_items"), orderBy("createdAt", "desc"), limit(5)));
@@ -85,28 +84,28 @@ const Index = () => {
         const inventoryQuery = getDocs(query(collection(db, "inventory"), orderBy("branchId"), limit(5)));
 
         const [
-          branchesCountSnap,
           itemsCountSnap,
-          pendingTransfersCountSnap,
           lowStockCountSnap,
+          incomingCountSnap, // New snap
+          outgoingCountSnap, // New snap
           incomingSnapshot,
           outgoingSnapshot,
           inventorySnapshot,
         ] = await Promise.all([
-          branchesCountQuery,
           itemsCountQuery,
-          pendingTransfersCountQuery,
           lowStockCountQuery,
+          incomingCountQuery, // New promise
+          outgoingCountQuery, // New promise
           incomingQuery,
           outgoingQuery,
           inventoryQuery,
         ]);
 
         setStats({
-          totalBranches: branchesCountSnap.data().count,
           totalItems: itemsCountSnap.data().count,
-          pendingTransfers: pendingTransfersCountSnap.data().count,
           lowStockAlerts: lowStockCountSnap.data().count,
+          totalIncoming: incomingCountSnap.data().count, // Set new stat
+          totalOutgoing: outgoingCountSnap.data().count, // Set new stat
         });
 
         // Process Recent Activities
@@ -185,16 +184,6 @@ const Index = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <GlassCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-200">Total Cabang</CardTitle>
-            <Building2 className="h-4 w-4 text-slate-300" />
-          </CardHeader>
-          <CardContent>
-            {renderStat(stats.totalBranches)}
-            <p className="text-xs text-slate-400">Semua lokasi perusahaan</p>
-          </CardContent>
-        </GlassCard>
-        <GlassCard>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">Total Item</CardTitle>
             <Package className="h-4 w-4 text-slate-300" />
           </CardHeader>
@@ -205,12 +194,22 @@ const Index = () => {
         </GlassCard>
         <GlassCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-200">Transfer Tertunda</CardTitle>
-            <ArrowRightLeft className="h-4 w-4 text-slate-300" />
+            <CardTitle className="text-sm font-medium text-slate-200">Barang Masuk</CardTitle>
+            <ArrowDownCircle className="h-4 w-4 text-slate-300" />
           </CardHeader>
           <CardContent>
-            {renderStat(stats.pendingTransfers)}
-            <p className="text-xs text-slate-400">Menunggu persetujuan</p>
+            {renderStat(stats.totalIncoming)}
+            <p className="text-xs text-slate-400">Total item masuk</p>
+          </CardContent>
+        </GlassCard>
+        <GlassCard>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-slate-200">Barang Keluar</CardTitle>
+            <ArrowUpCircle className="h-4 w-4 text-slate-300" />
+          </CardHeader>
+          <CardContent>
+            {renderStat(stats.totalOutgoing)}
+            <p className="text-xs text-slate-400">Total item keluar</p>
           </CardContent>
         </GlassCard>
         <GlassCard>
