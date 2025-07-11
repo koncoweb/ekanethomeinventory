@@ -15,18 +15,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2, Package, ArrowRightLeft, Bell, ArrowRight, Info } from "lucide-react";
+import { Building2, Package, ArrowRightLeft, Bell, ArrowRight, Info, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, orderBy, limit, getCountFromServer } from "firebase/firestore";
-import { toast } from "sonner"; // Menggunakan sonner
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { Transfer } from "./Transfers";
-import { InventoryDoc } from "./Inventory"; // Import InventoryDoc
+import { InventoryDoc } from "./Inventory";
 import { Button } from "@/components/ui/button";
 import { useData } from "@/contexts/DataContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { IncomingItem } from "./IncomingItems";
+import { OutgoingItemDoc } from "./OutgoingItems";
 
 interface DashboardStats {
   totalBranches: number;
@@ -35,17 +36,20 @@ interface DashboardStats {
   lowStockAlerts: number;
 }
 
-interface ProcessedTransfer extends Transfer {
-  itemName: string;
-  fromBranchName: string;
-  toBranchName: string;
-}
-
-// Memperbaiki interface untuk menyertakan totalQuantity
-interface ProcessedLowStockItem extends InventoryDoc {
+interface RecentActivity {
+  id: string;
+  type: 'in' | 'out';
+  date: Date;
   itemName: string;
   branchName: string;
-  totalQuantity: number; // Menambahkan properti ini
+  quantity: number;
+}
+
+interface RecentInventoryItem {
+  id: string;
+  itemName: string;
+  branchName: string;
+  totalQuantity: number;
 }
 
 const Index = () => {
@@ -57,43 +61,45 @@ const Index = () => {
     pendingTransfers: 0,
     lowStockAlerts: 0,
   });
-  const [recentTransfers, setRecentTransfers] = useState<ProcessedTransfer[]>([]);
-  const [lowStockItems, setLowStockItems] = useState<ProcessedLowStockItem[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [recentInventory, setRecentInventory] = useState<RecentInventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     document.title = "Eka Net Home - Inventory System - Dasbor";
-    if (dataLoading) return; // Wait for common data to be loaded
+    if (dataLoading) return;
 
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const lowStockThreshold = 10;
-
-        // Use getCountFromServer for efficient counting
-        // Catatan: Query 'where("quantity", "<", lowStockThreshold)' mengasumsikan ada field 'quantity' di root dokumen inventory.
-        // Jika 'quantity' hanya ada di dalam array 'entries', query ini tidak akan berfungsi seperti yang diharapkan di Firestore.
-        // Untuk tujuan perbaikan compile-time, kita akan mengasumsikan field ini ada atau akan ada.
+        // Stats Queries (some might be inefficient, kept as is for now)
         const branchesCountQuery = getCountFromServer(collection(db, "branches"));
         const itemsCountQuery = getCountFromServer(collection(db, "items"));
         const pendingTransfersCountQuery = getCountFromServer(query(collection(db, "transfers"), where("status", "==", "pending")));
-        const lowStockCountQuery = getCountFromServer(query(collection(db, "inventory"), where("quantity", "<", lowStockThreshold)));
+        // Note: lowStockCountQuery is likely inaccurate as `quantity` is not a root field.
+        const lowStockCountQuery = getCountFromServer(query(collection(db, "inventory"), where("quantity", "<", 10)));
 
-        // Queries that need full document data
-        const recentTransfersQuery = getDocs(query(collection(db, "transfers"), orderBy("createdAt", "desc"), limit(5)));
-        
+        // Data for new cards
+        const incomingQuery = getDocs(query(collection(db, "incoming_items"), orderBy("createdAt", "desc"), limit(5)));
+        const outgoingQuery = getDocs(query(collection(db, "outgoing_items"), orderBy("createdAt", "desc"), limit(5)));
+        const inventoryQuery = getDocs(query(collection(db, "inventory"), orderBy("branchId"), limit(5)));
+
         const [
           branchesCountSnap,
           itemsCountSnap,
           pendingTransfersCountSnap,
           lowStockCountSnap,
-          recentTransfersSnapshot,
+          incomingSnapshot,
+          outgoingSnapshot,
+          inventorySnapshot,
         ] = await Promise.all([
           branchesCountQuery,
           itemsCountQuery,
           pendingTransfersCountQuery,
           lowStockCountQuery,
-          recentTransfersQuery,
+          incomingQuery,
+          outgoingQuery,
+          inventoryQuery,
         ]);
 
         setStats({
@@ -103,34 +109,49 @@ const Index = () => {
           lowStockAlerts: lowStockCountSnap.data().count,
         });
 
-        // Use context maps directly
-        const processedTransfers = recentTransfersSnapshot.docs.map(doc => {
-          const data = doc.data() as Transfer;
+        // Process Recent Activities
+        const incomingActivities: RecentActivity[] = incomingSnapshot.docs.map(doc => {
+          const data = doc.data() as IncomingItem;
           return {
-            ...data,
             id: doc.id,
+            type: 'in',
+            date: data.createdAt.toDate(),
             itemName: itemsMap.get(data.itemId)?.name || "Item Tidak Dikenal",
-            fromBranchName: branchesMap.get(data.fromBranchId) || "Tidak Dikenal",
-            toBranchName: branchesMap.get(data.toBranchId) || "Tidak Dikenal",
+            branchName: branchesMap.get(data.branchId) || "Tidak Dikenal",
+            quantity: data.quantity,
           };
         });
-        setRecentTransfers(processedTransfers);
 
-        // We still need the full low stock docs for the table, so we'll fetch them separately
-        const lowStockSnapshot = await getDocs(query(collection(db, "inventory"), where("quantity", "<", lowStockThreshold), limit(5)));
-        const processedLowStock = lowStockSnapshot.docs.map(doc => {
-          const data = doc.data() as InventoryDoc;
-          // Menghitung totalQuantity dari entries untuk ProcessedLowStockItem
-          const totalQuantity = data.entries.reduce((sum, entry) => sum + entry.quantity, 0);
+        const outgoingActivities: RecentActivity[] = outgoingSnapshot.docs.map(doc => {
+          const data = doc.data() as OutgoingItemDoc;
           return {
-            ...data,
+            id: doc.id,
+            type: 'out',
+            date: data.createdAt.toDate(),
+            itemName: itemsMap.get(data.itemId)?.name || "Item Tidak Dikenal",
+            branchName: branchesMap.get(data.branchId) || "Tidak Dikenal",
+            quantity: data.quantity,
+          };
+        });
+
+        const combinedActivities = [...incomingActivities, ...outgoingActivities]
+          .sort((a, b) => b.date.getTime() - a.date.getTime())
+          .slice(0, 5);
+        
+        setRecentActivities(combinedActivities);
+
+        // Process Recent Inventory
+        const processedInventory = inventorySnapshot.docs.map(doc => {
+          const data = doc.data() as InventoryDoc;
+          const totalQuantity = (data.entries || []).reduce((sum, entry) => sum + entry.quantity, 0);
+          return {
             id: doc.id,
             itemName: itemsMap.get(data.itemId)?.name || "Item Tidak Dikenal",
             branchName: branchesMap.get(data.branchId) || "Cabang Tidak Dikenal",
-            totalQuantity: totalQuantity, // Menambahkan totalQuantity
+            totalQuantity: totalQuantity,
           };
         });
-        setLowStockItems(processedLowStock);
+        setRecentInventory(processedInventory);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -153,19 +174,6 @@ const Index = () => {
       {children}
     </Card>
   );
-
-  const statusToIndonesian = (status: "pending" | "completed" | "rejected") => {
-    switch (status) {
-      case "pending":
-        return "Tertunda";
-      case "completed":
-        return "Selesai";
-      case "rejected":
-        return "Ditolak";
-      default:
-        return status;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -221,7 +229,7 @@ const Index = () => {
         <GlassCard>
           <CardHeader>
             <CardTitle>Aktivitas Terbaru</CardTitle>
-            <CardDescription className="text-slate-300">5 transfer inventaris terakhir.</CardDescription>
+            <CardDescription className="text-slate-300">5 pergerakan inventaris terakhir (masuk & keluar).</CardDescription>
           </CardHeader>
           <CardContent>
             {loading || dataLoading ? (
@@ -230,27 +238,27 @@ const Index = () => {
                 <Skeleton className="h-8 w-full bg-white/20" />
                 <Skeleton className="h-8 w-full bg-white/20" />
               </div>
-            ) : recentTransfers.length > 0 ? (
+            ) : recentActivities.length > 0 ? (
               <div className="space-y-4">
-                {recentTransfers.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between">
+                {recentActivities.map((act) => (
+                  <div key={act.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="p-2 bg-white/10 rounded-full">
-                        <ArrowRightLeft className="h-5 w-5" />
+                      <div className={`p-2 bg-white/10 rounded-full ${act.type === 'in' ? 'text-green-400' : 'text-orange-400'}`}>
+                        {act.type === 'in' ? <ArrowDownCircle className="h-5 w-5" /> : <ArrowUpCircle className="h-5 w-5" />}
                       </div>
                       <div>
-                        <p className="font-medium">{t.itemName} ({t.quantity})</p>
-                        <p className="text-sm text-slate-300">{t.fromBranchName} → {t.toBranchName}</p>
+                        <p className="font-medium">{act.itemName} ({act.quantity})</p>
+                        <p className="text-sm text-slate-300">{act.branchName}</p>
                       </div>
                     </div>
-                    <Badge variant={t.status === "completed" ? "default" : t.status === "rejected" ? "destructive" : "secondary"}>
-                      {statusToIndonesian(t.status)}
+                    <Badge variant={act.type === 'in' ? 'default' : 'destructive'} className={act.type === 'in' ? 'bg-green-600/80' : 'bg-orange-600/80'}>
+                      {act.type === 'in' ? 'Masuk' : 'Keluar'}
                     </Badge>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-400 text-center py-4">Tidak ada transfer terbaru ditemukan.</p>
+              <p className="text-sm text-slate-400 text-center py-4">Tidak ada aktivitas terbaru ditemukan.</p>
             )}
           </CardContent>
         </GlassCard>
@@ -258,8 +266,8 @@ const Index = () => {
         <GlassCard>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Item Stok Rendah</CardTitle>
-              <CardDescription className="text-slate-300">Item dengan kuantitas kurang dari 10.</CardDescription>
+              <CardTitle>Inventaris Terbaru</CardTitle>
+              <CardDescription className="text-slate-300">Beberapa item dalam inventaris.</CardDescription>
             </div>
             <Button asChild variant="outline" size="sm" className="bg-transparent border-white/20 hover:bg-white/10">
               <Link to="/inventory">
@@ -275,7 +283,7 @@ const Index = () => {
                 <Skeleton className="h-6 w-full bg-white/20" />
                 <Skeleton className="h-6 w-full bg-white/20" />
               </div>
-            ) : lowStockItems.length > 0 ? (
+            ) : recentInventory.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/20">
@@ -285,17 +293,17 @@ const Index = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lowStockItems.map((item) => (
+                  {recentInventory.map((item) => (
                     <TableRow key={item.id} className="border-white/20">
                       <TableCell className="font-medium">{item.itemName}</TableCell>
                       <TableCell className="text-slate-300">{item.branchName}</TableCell>
-                      <TableCell className="text-right font-bold text-red-400">{item.totalQuantity}</TableCell> {/* Menggunakan totalQuantity */}
+                      <TableCell className="text-right font-bold">{item.totalQuantity}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-slate-400 text-center py-4">Tidak ada item stok rendah. Kerja bagus!</p>
+              <p className="text-sm text-slate-400 text-center py-4">Tidak ada data inventaris ditemukan.</p>
             )}
           </CardContent>
         </GlassCard>
