@@ -237,8 +237,8 @@ const Inventory = () => {
         <CardHeader className="no-print">
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Inventory Management</CardTitle>
-              <CardDescription>View and manage stock levels across branches.</CardDescription>
+              <CardTitle>Manajemen Inventaris</CardTitle>
+              <CardDescription>Lihat dan kelola tingkat stok di seluruh cabang.</CardDescription>
             </div>
             <div className="flex items-center space-x-2">
               <Button onClick={handlePrintAll} variant="outline">
@@ -250,14 +250,14 @@ const Inventory = () => {
                   <DialogTrigger asChild>
                     <Button>
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      Add Initial Stock
+                      Tambah Stok Awal
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
                     <DialogHeader>
-                      <DialogTitle className="text-white">Add Initial Stock</DialogTitle>
+                      <DialogTitle className="text-white">Tambah Stok Awal</DialogTitle>
                       <DialogDescription className="text-slate-300">
-                        Create the first inventory record for an item at a specific branch.
+                        Buat catatan inventaris pertama untuk suatu item di cabang tertentu.
                       </DialogDescription>
                     </DialogHeader>
                     <AddInventoryForm 
@@ -275,14 +275,14 @@ const Inventory = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Branch</TableHead>
-                <TableHead>Item Name</TableHead>
+                <TableHead>Cabang</TableHead>
+                <TableHead>Nama Item</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead>Rack Location</TableHead>
-                <TableHead className="text-center">Total Quantity</TableHead>
-                <TableHead className="text-right">Avg. Price</TableHead>
-                <TableHead className="text-right">Total Value</TableHead>
-                <TableHead className="text-right no-print">Actions</TableHead>
+                <TableHead>Lokasi Rak</TableHead>
+                <TableHead className="text-center">Total Kuantitas</TableHead>
+                <TableHead className="text-right">Harga Rata-rata</TableHead>
+                <TableHead className="text-right">Total Nilai</TableHead>
+                <TableHead className="text-right no-print">Tindakan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -300,10 +300,10 @@ const Inventory = () => {
                     {(role === 'admin' || (role === 'manager' && inv.branchId === userBranchId)) && (
                       <div className="flex justify-end items-center space-x-1">
                         <Button variant="outline" size="sm" onClick={() => handleAddStockClick(inv)}>
-                          <PlusCircle className="h-4 w-4 mr-1" /> Add
+                          <PlusCircle className="h-4 w-4 mr-1" /> Tambah
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handleViewDetailsClick(inv)}>
-                          <Eye className="h-4 w-4 mr-1" /> View
+                          <Eye className="h-4 w-4 mr-1" /> Lihat
                         </Button>
                         {role === 'admin' && (
                           <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(inv.id)}>
@@ -316,18 +316,18 @@ const Inventory = () => {
                 ))
               ) : (
                 <TableRow><TableCell colSpan={8} className="text-center h-24">
-                  No inventory records found.
+                  Tidak ada catatan inventaris ditemukan.
                 </TableCell></TableRow>
               )}
             </TableBody>
           </Table>
           <div className="flex justify-between items-center mt-4 no-print">
             <Button onClick={handlePreviousPage} disabled={currentPage === 1 || loading || dataLoading} variant="outline">
-              Previous
+              Sebelumnya
             </Button>
-            <span className="text-sm">Page {currentPage}</span>
+            <span className="text-sm">Halaman {currentPage}</span>
             <Button onClick={handleNextPage} disabled={!hasMore || loading || dataLoading} variant="outline">
-              Next
+              Berikutnya
             </Button>
           </div>
         </CardContent>
@@ -337,9 +337,9 @@ const Inventory = () => {
       <Dialog open={isAddStockOpen} onOpenChange={setIsAddStockOpen}>
         <DialogContent className="sm:max-w-[425px] bg-black/20 backdrop-blur-lg border border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle className="text-white">Add Stock for {selectedInventory?.itemName}</DialogTitle>
+            <DialogTitle className="text-white">Tambah Stok untuk {selectedInventory?.itemName}</DialogTitle>
             <DialogDescription className="text-slate-300">
-              Enter new stock details for this item at {selectedInventory?.branchName}.
+              Masukkan detail stok baru untuk item ini di {selectedInventory?.branchName}.
             </DialogDescription>
           </DialogHeader>
           {selectedInventory && <AddStockForm inventoryItem={selectedInventory} onClose={() => setIsAddStockOpen(false)} />}
@@ -357,14 +357,14 @@ const Inventory = () => {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-black/20 backdrop-blur-lg border border-white/10 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">Apakah Anda benar-benar yakin?</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-300">
-              This action cannot be undone. This will permanently delete this entire inventory record and all its stock entries.
+              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus secara permanen seluruh catatan inventaris ini dan semua entri stoknya.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteInventory} className="bg-red-600 hover:bg-red-500 text-white">Continue</AlertDialogAction>
+            <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteInventory} className="bg-red-600 hover:bg-red-500 text-white">Lanjutkan</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
