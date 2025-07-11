@@ -13,8 +13,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrencyIDR } from "@/lib/utils";
-import { InventoryDoc } from "@/pages/Inventory"; // Changed from Inventory to InventoryDoc
-import { Item } from "@/pages/Items"; // Import Item interface
+import { InventoryDoc } from "@/pages/Inventory";
+import { Item } from "@/pages/Items";
 
 const formSchema = z.object({
   inventoryId: z.string().min(1, "Inventaris harus dipilih."),
@@ -26,9 +26,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface InventoryOption {
-  value: string; // inventory.id
-  label: string; // "Item Name - Branch Name"
-  supplier: string; // last known supplier
+  value: string;
+  label: string;
+  supplier: string;
 }
 
 export const NewIncomingItemForm = ({ onTransactionComplete }: { onTransactionComplete: () => void }) => {
@@ -55,9 +55,9 @@ export const NewIncomingItemForm = ({ onTransactionComplete }: { onTransactionCo
 
       const inventorySnapshot = await getDocs(collection(db, "inventory"));
       const options = inventorySnapshot.docs.map(docSnap => {
-        const inventory = { id: docSnap.id, ...docSnap.data() } as InventoryDoc; // Changed to InventoryDoc
-        const item = itemsMap.get(inventory.itemId); // Get the Item object
-        const itemName = item?.name || "Item Tidak Dikenal"; // Access name property
+        const inventory = { id: docSnap.id, ...docSnap.data() } as InventoryDoc;
+        const item = itemsMap.get(inventory.itemId);
+        const itemName = item?.name || "Item Tidak Dikenal";
         const branchName = branchesMap.get(inventory.branchId) || "Cabang Tidak Dikenal";
         const lastSupplier = inventory.entries.length > 0 ? inventory.entries[inventory.entries.length - 1].supplier : "";
         return {
@@ -72,7 +72,6 @@ export const NewIncomingItemForm = ({ onTransactionComplete }: { onTransactionCo
   }, [itemsMap, branchesMap]);
 
   const handleInventoryChange = (inventoryId: string) => {
-    form.setValue("inventoryId", inventoryId);
     const selectedOption = inventoryOptions.find(opt => opt.value === inventoryId);
     if (selectedOption && selectedOption.supplier) {
       form.setValue("supplier", selectedOption.supplier);
@@ -94,7 +93,6 @@ export const NewIncomingItemForm = ({ onTransactionComplete }: { onTransactionCo
           throw new Error("Dokumen inventaris tidak ditemukan. Tidak dapat melanjutkan.");
         }
 
-        // 1. Create new incoming item record
         const newIncomingItemRef = doc(collection(db, "incoming_items"));
         transaction.set(newIncomingItemRef, {
           inventoryId: values.inventoryId,
@@ -107,7 +105,6 @@ export const NewIncomingItemForm = ({ onTransactionComplete }: { onTransactionCo
           createdAt: serverTimestamp(),
         });
 
-        // 2. Update the inventory document
         const newEntry = {
           quantity: values.quantity,
           purchasePrice: values.purchasePrice,
@@ -127,7 +124,8 @@ export const NewIncomingItemForm = ({ onTransactionComplete }: { onTransactionCo
       onTransactionComplete();
     } catch (error) {
       console.error("Transaction failed: ", error);
-      toast.error("Gagal Mencatat", { id: toastId, description: (error as Error).message });
+      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui.";
+      toast.error("Gagal Mencatat", { id: toastId, description: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
@@ -148,7 +146,13 @@ export const NewIncomingItemForm = ({ onTransactionComplete }: { onTransactionCo
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Pilih Inventaris Barang</FormLabel>
-                  <Select onValueChange={handleInventoryChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleInventoryChange(value);
+                    }}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih item dan cabang..." />
