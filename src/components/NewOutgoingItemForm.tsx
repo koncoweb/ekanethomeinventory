@@ -169,7 +169,7 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
                 value={field.value}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-gray-900">
                     <SelectValue placeholder="Pilih item dari cabang..." />
                   </SelectTrigger>
                 </FormControl>
@@ -198,7 +198,7 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
             <FormItem>
               <FormLabel className="text-black">Jumlah Keluar</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="e.g., 5" {...field} />
+                <Input type="number" placeholder="e.g., 5" {...field} className="text-gray-900" />
               </FormControl>
               {selectedStock !== null && <p className="text-sm text-muted-foreground">Stok tersedia: {selectedStock}</p>}
               <FormMessage />
@@ -212,7 +212,7 @@ export const NewOutgoingItemForm = ({ onTransactionComplete }: { onTransactionCo
             <FormItem>
               <FormLabel className="text-black">Alasan Barang Keluar</FormLabel>
               <FormControl>
-                <Textarea placeholder="e.g., Penjualan, Rusak, Kadaluarsa..." {...field} />
+                <Textarea placeholder="e.g., Penjualan, Rusak, Kadaluarsa..." {...field} className="text-gray-900" />
               </FormControl>
               <FormMessage />
             </FormItem>
